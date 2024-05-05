@@ -13,6 +13,7 @@ const jo = require('jpeg-autorotate');
 const os = require('os');
 const sharp = require('sharp');
 var tenantService = require('../tenantService.js');
+
 class ReportGeneration{
     async generateReportDoc(project,companyName,sectionImageProperties,reportType){
         try{
@@ -250,24 +251,35 @@ class ReportGeneration{
                 locations.push(projects[key]);
             }
         }
-        subProjects.sort(function(subProj1,subProj2){
-            console.log(subProj1.sequenceNo);
-            if (subProj1.sequenceNo===null||subProj1.sequenceNo===undefined) {
-                return subProj1._id-subProj2._id;
-            }else{
-                return (subProj1.sequenceNo-subProj2.sequenceNo);
+
+        subProjects.sort(function(subProj1, subProj2) {
+            if (subProj1.isInvasive && !subProj2.isInvasive) {
+                return -1; // subProj1 comes before subProj2
+            } else if (!subProj1.isInvasive && subProj2.isInvasive) {
+                return 1; // subProj2 comes before subProj1
+            } else {
+                if (subProj1.sequenceNo === null || subProj1.sequenceNo === undefined) {
+                    return subProj1._id - subProj2._id;
+                } else {
+                    return subProj1.sequenceNo - subProj2.sequenceNo;
+                }
             }
-            
         });
-        locations.sort(function(loc1,loc2){
-            console.log(loc1.sequenceNo);
-            if (loc1.sequenceNo===null||loc1.sequenceNo===undefined) {
-                return (loc1._id-loc2._id);
-            }else{
-                return (loc1.sequenceNo-loc2.sequenceNo);
+        
+        locations.sort(function(loc1, loc2) {
+            if (loc1.isInvasive && !loc2.isInvasive) {
+                return -1; // loc1 comes before loc2
+            } else if (!loc1.isInvasive && loc2.isInvasive) {
+                return 1; // loc2 comes before loc1
+            } else {
+                if (loc1.sequenceNo === null || loc1.sequenceNo === undefined) {
+                    return loc1._id - loc2._id;
+                } else {
+                    return loc1.sequenceNo - loc2.sequenceNo;
+                }
             }
-            
         });
+        
         orderedProjects.push(...subProjects);
         orderedProjects.push(...locations);
         return orderedProjects;
