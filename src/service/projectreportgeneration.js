@@ -13,7 +13,11 @@ var fsp = require('fs/promises');
 const generateProjectReport = async function generate(projectId,sectionImageProperties,companyName,reportType,
     reportFormat, fileName)
 {
+    console.time('generateprojectreport');
+
+
     try{
+
         const project  = await projects.getProjectById(projectId);
         
         // const fileName = project.data.item.name.split(' ').join('_') + "_"+ reportType;
@@ -32,11 +36,12 @@ const generateProjectReport = async function generate(projectId,sectionImageProp
                 
             });
             //unlink all
-            projectDocxList.forEach(filechunk=>{
-                if (fs.existsSync(filechunk)) {
-                    fs.unlinkSync(filechunk);
-                }              
-            });
+            
+            // projectDocxList.forEach(filechunk=>{
+            //     if (fs.existsSync(filechunk)) {
+            //         fs.unlinkSync(filechunk);
+            //     }              
+            // });
 
 
             var docx = new DocxMerger({},fileList);
@@ -59,6 +64,8 @@ const generateProjectReport = async function generate(projectId,sectionImageProp
         console.log(err);
         // callback("");
     }
+    console.timeEnd('generateprojectreport');
+    
 };
 
 async function getProjectDoc(project, sectionImageProperties,companyName, reportType,reportFormat='pdf') {

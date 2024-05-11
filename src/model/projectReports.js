@@ -4,11 +4,20 @@ const { ObjectId } = require('mongodb');
 var mongo = require('../database/mongo');
 const Role = require('./role');
 
-
+var isProjectReportinProgress = async function(project_id,reportType){
+    var result =await mongo.ProjectReports.findOne({ 'project_id': project_id,
+    'reportType': reportType });
+    if (result) {
+         return result.isReportInProgress;
+    } else{
+        return false;
+    }
+}
 var addProjectReport = async function (projectReport, callback) {
     var result = await mongo.ProjectReports.findOne({ 'project_id': projectReport.project_id,
      'reportType': projectReport.reportType });
     if (result) {
+         
          var updateReult = await mongo.ProjectReports.updateOne({ _id: result._id },
              { $set: projectReport },{upsert:true});
         if (updateReult.modifiedCount=1) {
@@ -95,5 +104,6 @@ module.exports = {
     addProjectReport: addProjectReport,
     getProjectReportsbyProjectId: getProjectReportsbyProjectId,
     removeReport: removeReport,
-    updateProjectReport
+    updateProjectReport,
+    isProjectReportinProgress
 };

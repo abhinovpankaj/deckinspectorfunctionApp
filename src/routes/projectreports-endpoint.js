@@ -6,7 +6,8 @@ var path = require('path');
 const projectReports = require("../model/projectReports");
 var jwt = require('jsonwebtoken');
 const Role=require('../model/role');
-
+const ProjectReportType = require("../model/projectReportType.js");
+const { saveDocReportForLocation } = require('../service/sectionParts/util/locationGeneration/locationreportgeneration.js');
 require("dotenv").config();
 
 router.route('/add')
@@ -113,4 +114,20 @@ router.route('/download/Report')
     res.status(500).send({message:`Error while reading data ${error}`});
   }  
 });
+router.route('/locationupdated')
+.post(async function(req,res){
+  try {
+    var locationId = req.body.locationId;
+    var subProjectName = req.body.subProjectName
+    
+    res.status(200).send('Generating location report');
+    
+    await saveDocReportForLocation(locationId,ProjectReportType.VISUALREPORT,subProjectName);
+    await saveDocReportForLocation(locationId,ProjectReportType.INVASIVEVISUAL,subProjectName);
+    await saveDocReportForLocation(locationId,ProjectReportType.INVASIVEONLY, subProjectName);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('failed, but has no impact.');
+  }
+})
 module.exports = router ;

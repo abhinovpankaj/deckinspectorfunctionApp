@@ -23,6 +23,8 @@ const { WebPubSubServiceClient } = require('@azure/web-pubsub');
 const users = require("../model/user.js");
 const emailService = require("../service/emailService.js");
 var tenantService = require('../service/tenantService');
+const ProjectReportType = require("../model/projectReportType.js");
+const { saveDocReportForLocation } = require('../service/sectionParts/util/locationGeneration/locationreportgeneration.js');
 router.route('/add')
 .post(async function (req, res) {
   try {
@@ -389,10 +391,9 @@ router.route('/getProjectMetadata/:id')
  * */
 router.route('/generatereport')
 .post(async function (req, res) {
-  
-        
-        const hostname = req.headers.host;
-        const protocol = req.protocol;
+          
+  const hostname = req.headers.host; 
+  const companyIdentifier = req.user.company;
     try{
         const outputDir = path.join("projectreportfiles");
             if (!fs.existsSync(outputDir)) {
@@ -407,18 +408,28 @@ router.route('/generatereport')
             // const requestType = req.body.requestType;
             // const reportId = uuidv4();
             // console.log(`reportID: ${reportId}`);
-            const projectName = req.body.projectName;
+            const projectName = req.body.projectName.replace(/[^\w\s]/g, '');
+            
             const uploader = req.body.user;
         // const docpath = `${projectName}_${reportType}_${reportId}`;
         
             const now = new Date();
-            const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+            
             const docpath = path.join(outputDir,`${projectName}_${reportType}`);
             
             let project_id = projectId;
             let name = projectName;
-            console.log(response);
+            
             let reporttimestamp = (new Date(Date.now())).toISOString();
+            
+            //check if report is already in progress
+            var isReportInProgress = await projectReports.isProjectReportinProgress(project_id,reportType);
+            if (isReportInProgress) {
+              
+              return res.status(200).send('Report generation already in progress.');
+              broadcastMessageToHub(projectName,false);
+              
+            }
             projectReports.addProjectReport({
             project_id,
             name,
@@ -430,6 +441,8 @@ router.route('/generatereport')
             },function(err,result){
                 if (err) { 
                     console.log(err)
+                    res.status(500).send('Error Generating report');
+                    return;
                 }
                 if (result){
                     if (result._id===undefined) {
@@ -437,97 +450,106 @@ router.route('/generatereport')
                     }else{
                         projectReportId = result._id;
                     }
-                    
+                    createDocument(companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName)                
                     console.log(result)
                 }
             });
-            res.status(200).send('Generating report');
-                       
-            await generateProjectReport(projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath);
-            const absolutePath = path.resolve(`${docpath}.${reportFormat}`);
-            console.log(absolutePath);
-            const containerName = projectName;
-            const uploadOptions = {
-            metadata: {
-                'uploader': uploader,
-              },
-              tags: {
-                  'project': containerName,
-                  'owner': projectName
-              }
-            };
-            const newContainerName = containerName.replace(/\s+/g, '').toLowerCase();
-            const fileName = `${projectName}_${reportType}_${timestamp}.${reportFormat}`;
-            const newfileName = fileName.replace(/\s+/g, '').toLowerCase();
-            //here we will save the file on server.
-            //var result = await uploadBlob.uploadFile(newContainerName, newfileName, absolutePath, uploadOptions);
-            
-            //http://localhost:7071/api/downloadReport?name=Tiara Del Pacifica Homeowners Asssociation&type=Visual&format=docx
-             const fileUrl = (`https://${hostname}/api/projectreports/download/Report?name=${encodeURIComponent(projectName)}&type=${reportType}&format=${reportFormat}`);
-            console.log(fileUrl);
 
-            var result=  (`{"message":"${fileName} succeeded","url":"${fileUrl}"}`);
+            res.status(200).send('Generating report');
             
-            var response = JSON.parse(result);
-            if (response.error) {
-                //responseError = new ErrorResponse(500, 'Internal server error', result.error);
-                console.log(response);
-                // res.status(500).json(responseError);
-                return;
-            }
-            if (response.message) {
-                
-                //fs.unlinkSync(absolutePath);
-                //Update images Url
-                let url = response.url;
-                //update report
-                projectReports.updateProjectReport({
-                    _id:projectReportId,
-                    project_id,
-                    fileName,                   
-                    url,
-                    isReportInProgress:false                   
-                    },function(err,result){
-                        if (err) { 
-                            console.log(err)
-                        }
-                        if (result){
-                            console.log(result)
-                        }
-                    });
-                // console.log(projectId);
-                // console.log('report uploaded');
-                broadcastMessageToHub(projectName);
-                try{
-                  const reportFileStats = fs.statSync(absolutePath);
-                  const reportFileSize = reportFileStats.size;
-                  const companyIdentifier = req.user.company;
-                  
-                  const result = tenantService.editTenant(companyIdentifier, reportFileSize);
-                  if (result.reason){
-                    console.log(result);
-                  }
-                  //update size in tenant
-                }
-                catch(ex){
-                  console.log(`Exception: ${ex}`);
-                }
-                //send email.
-                var emailId = await users.getEmailIdByUserName(uploader);
-                await emailService.sendEmail(`${projectName}'s ${reportType} report is ready`,emailId,
-                `Hi,
-                 The ${reportType} report for Project ${projectName} is ready. Please download it from the reports sections or click on the below url.
-                 ${url.replaceAll(' ','%20')}`);
-            }
-            // else
-            //     res.status(409).json(response);      
+            
         } catch (err) {
             console.error('Error generating Report:', err);
         //return res.status(500).send('Error generating Report');
         }
     });
 
+  async function createDocument (companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, 
+    docpath,uploader,projectReportId,projectName){
+      
+        
+    await generateProjectReport(projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath);
+    const absolutePath = path.resolve(`${docpath}.${reportFormat}`);
 
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+    console.log(absolutePath);
+    //const containerName = projectName;
+    const uploadOptions = {
+    metadata: {
+        'uploader': uploader,
+      },
+      tags: {
+          'projectId': projectId,
+          'owner': uploader
+      }
+    };
+    //const newContainerName = containerName.replace(/\s+/g, '').toLowerCase();
+    const fileName = `${projectName}_${reportType}_${timestamp}.${reportFormat}`;
+    const newfileName = fileName.replace(/\s+/g, '').toLowerCase();
+    //here we will save the file on server.
+    //var result = await uploadBlob.uploadFile(newContainerName, newfileName, absolutePath, uploadOptions);
+    
+    //http://localhost:7071/api/downloadReport?name=Tiara Del Pacifica Homeowners Asssociation&type=Visual&format=docx
+    const fileUrl = (`https://${hostname}/api/projectreports/download/Report?name=${encodeURIComponent(projectName)}&type=${reportType}&format=${reportFormat}`);
+    console.log(fileUrl);
+
+    var result=  (`{"message":"${fileName} succeeded","url":"${fileUrl}"}`);
+    
+    var response = JSON.parse(result);
+    if (response.error) {
+        //responseError = new ErrorResponse(500, 'Internal server error', result.error);
+        console.log(response);
+        // res.status(500).json(responseError);
+        return;
+    }
+    if (response.message) {
+        
+        //fs.unlinkSync(absolutePath);
+        //Update images Url
+        let url = response.url;
+        //update report
+        projectReports.updateProjectReport({
+            _id:projectReportId,
+            projectId,
+            fileName,                   
+            url,
+            isReportInProgress:false                   
+            },function(err,result){
+                if (err) { 
+                    console.log(err)
+                }
+                if (result){
+                    console.log(result)
+                }
+            });
+        // console.log(projectId);
+        // console.log('report uploaded');
+        
+        try{
+          const reportFileStats = fs.statSync(absolutePath);
+          const reportFileSize = reportFileStats.size;
+          
+          
+          const result = tenantService.editTenant(companyIdentifier, reportFileSize);
+          if (result.reason){
+            console.log(result);
+          }
+          //update size in tenant
+        }
+        catch(ex){
+          console.log(`Exception: ${ex}`);
+        }
+        //send email.
+        var emailId = await users.getEmailIdByUserName(uploader);
+        await emailService.sendEmail(`${projectName}'s ${reportType} report is ready`,emailId,
+        `Hi,
+          The ${reportType} report for Project ${projectName} is ready. Please download it from the reports sections or click on the below url.
+          ${url.replaceAll(' ','%20')}`);
+          //broadcastMessageToHub(projectName);
+      }
+          
+}
 router.route('/downloadReport')
     .get(async function(req,res){   
       console.log('sending report file... ');
@@ -630,11 +652,19 @@ router.route('/replacefinalreporttemplate')
   }
 })
 
-async function broadcastMessageToHub(projectName){
-  const hubName = 'reportnotificationhub';
+async function broadcastMessageToHub(projectName, isReady=true){
+  try {
+    const hubName = 'reportnotificationhub';
   const serviceClient = new WebPubSubServiceClient(process.env.WebPubSubConnectionString, hubName);
   // Send a JSON message
-  await serviceClient.sendToAll({ message: `Report for project: ${projectName} is ready, please visit reports sections to download.` });
+  if (isReady) {
+    await serviceClient.sendToAll({ message: `Report for project: ${projectName} is ready, please visit reports sections to download.` });
+  }else{
+    await serviceClient.sendToAll({ message: `Report for project: ${projectName} is still generating, please wait...` });
+  }
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 module.exports = router;
