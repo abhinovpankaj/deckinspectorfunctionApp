@@ -272,10 +272,11 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
   try {
     const sectionDataDoc =
     [];
-    //console.log(__dirname);
+    console.log('inside savedocfrlocation');
     const location = await locations.getLocationById(locationId);
     
     if (!location.data) {
+      console.log('data not found for locationid');
       return "";
     } else {
 

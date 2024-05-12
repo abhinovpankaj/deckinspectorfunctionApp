@@ -119,7 +119,8 @@ router.route('/locationupdated')
   try {
     var locationId = req.body.locationId;
     var subProjectName = req.body.subProjectName
-    console.log('inside locationupdated endpoint');
+
+    console.log(`inside locationupdated endpoint ${locationId} ${subProjectName}`);
     res.status(200).send('Generating location report');
     
     await saveDocReportForLocation(locationId,ProjectReportType.VISUALREPORT,subProjectName);
