@@ -129,5 +129,5 @@ router.route('/locationupdated')
     console.log(error);
     res.status(500).send('failed, but has no impact.');
   }
-})
+});
 module.exports = router ;
