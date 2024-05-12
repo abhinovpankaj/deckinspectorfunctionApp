@@ -730,8 +730,8 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
     }
   });
   
-  // const outputDir = path.join("sectionfiles",locationId.toString());
-  const outputDir = path.join("sectionfiles");
+  const outputDir = path.join("sectionfiles",locationId.toString());
+  //const outputDir = path.join("sectionfiles");
   if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir,{ recursive: true });
   }

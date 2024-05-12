@@ -119,12 +119,15 @@ router.route('/locationupdated')
   try {
     var locationId = req.body.locationId;
     var subProjectName = req.body.subProjectName
-    
+    console.log('inside locationupdated endpoint');
     res.status(200).send('Generating location report');
     
     await saveDocReportForLocation(locationId,ProjectReportType.VISUALREPORT,subProjectName);
+    console.log('created visual doc');
     await saveDocReportForLocation(locationId,ProjectReportType.INVASIVEVISUAL,subProjectName);
+    console.log('created invasive doc');
     await saveDocReportForLocation(locationId,ProjectReportType.INVASIVEONLY, subProjectName);
+    console.log('created conclusive doc');
   } catch (error) {
     console.log(error);
     res.status(500).send('failed, but has no impact.');
