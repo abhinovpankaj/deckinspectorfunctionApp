@@ -654,7 +654,7 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
   //   jpegjsMaxResolutionInMP: 2048,
   // }
   try {
-    const buffer = await docxTemplate.createReport({
+      const buffer = await docxTemplate.createReport({
       template,
       failFast:false,
       data: {
@@ -700,12 +700,6 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
           
           try {
               
-              // const resp = await fetch(
-              //   imageurl,
-              //   {setTimeout:16000}
-              // );
-
-              //const resp = await fetchPlus(imageurl,{keepAlive: true },3);
               var urlArray = imageurl.toString().split('/');
               var imagebuffer;
               if (imageurl.includes('deckinspectorsappdata')) {
@@ -718,21 +712,14 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
                 return;
               }
               
-              //console.log(imageurl);
-                // var extension  = path.extname(imageurl);
-                // if (extension==='.HEIC') {
-                //   extension='.jpg';
-                // }
-
-                //fix image rotation
-                try {
-                  var {buffer} = await jo.rotate(Buffer.from(imagebuffer), {quality:50});
-                  
-                  return { height: 6,width: 4.8,  data: buffer, extension: '.jpg' };
-                } catch (error) {
-                  console.log('An error occurred when rotating the file: ' + error);
-                  return { height: 6,width: 4.8,  data: imagebuffer, extension: '.jpg' };
-                }
+              try {
+                var {buffer} = await jo.rotate(Buffer.from(imagebuffer), {quality:50});
+                
+                return { height: 6,width: 4.8,  data: buffer, extension: '.jpg' };
+              } catch (error) {
+                console.log('An error occurred when rotating the file: ' + error);
+                return { height: 6,width: 4.8,  data: imagebuffer, extension: '.jpg' };
+              }
                   
           } catch (error) {
             console.log(imageurl);
@@ -742,19 +729,20 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
         }, 
     }
   });
-  const outputDir = path.join("sectionfiles",locationId.toString());
-            if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir,{ recursive: true });
-            }
-    var filename = path.join(outputDir,`${sectionId}_${reportType}.docx`);
-    fs.writeFileSync(filename, buffer);
-    console.log(filename);
-    return filename;
-  } catch (error) {
+  
+  // const outputDir = path.join("sectionfiles",locationId.toString());
+  const outputDir = path.join("sectionfiles");
+  if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir,{ recursive: true });
+  }
+  var filename = path.join(outputDir,`${sectionId}_${reportType}.docx`);
+  fs.writeFileSync(filename, buffer);
+  console.log(filename);
+  return filename;
+} catch (error) {
     console.log(error);
     return "";
-  }
-  
+}
 }
 function isLocationFileExists(filePath){
   
