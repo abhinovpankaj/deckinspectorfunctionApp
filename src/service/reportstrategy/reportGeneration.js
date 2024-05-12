@@ -35,7 +35,7 @@ class ReportGeneration{
             var showfooter=true;
             var tenantDetails = await tenantService.getTenant(companyName);
             if (tenantDetails.success) {
-                website = tenantDetails.tenant.website;
+                website = tenantDetails.tenant.footerText;
                 headerImageURL = tenantDetails.tenant.icons.header;
                 createdBy =tenantDetails.tenant.name;
                 footerImageURL = tenantDetails.tenant.icons.footer;
