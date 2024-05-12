@@ -525,6 +525,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
             sectionDataDoc[index]=filename;
         }
         }));
+        console.log(sectionDataDoc);
         return sectionDataDoc;
       }
     }
@@ -747,7 +748,7 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
             }
     var filename = path.join(outputDir,`${sectionId}_${reportType}.docx`);
     fs.writeFileSync(filename, buffer);
-    //console.log(filename);
+    console.log(filename);
     return filename;
   } catch (error) {
     console.log(error);
