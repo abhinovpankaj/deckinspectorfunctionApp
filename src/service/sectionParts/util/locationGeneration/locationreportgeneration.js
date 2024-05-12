@@ -649,10 +649,10 @@ const getLocationDoc = async function(locationId,sectionId,template,sectionDocVa
 }
 
 const saveLocationDoc = async function(locationId,sectionId,template,sectionDocValues,reportType){
-  const options = {
+  // const options = {
     
-    jpegjsMaxResolutionInMP: 2048,
-  }
+  //   jpegjsMaxResolutionInMP: 2048,
+  // }
   try {
     const buffer = await docxTemplate.createReport({
       template,
@@ -719,10 +719,10 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
               }
               
               //console.log(imageurl);
-                var extension  = path.extname(imageurl);
-                if (extension==='.HEIC') {
-                  extension='.jpg';
-                }
+                // var extension  = path.extname(imageurl);
+                // if (extension==='.HEIC') {
+                //   extension='.jpg';
+                // }
 
                 //fix image rotation
                 try {
@@ -735,7 +735,7 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
                 }
                   
           } catch (error) {
-             console.log(imageurl);
+            console.log(imageurl);
             console.log(error);
             return ;
           }   
