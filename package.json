@@ -36,6 +36,7 @@
     "nodemon": "^2.0.22",
     "passport": "^0.6.0",
     "pizzip": "^3.1.4",
+    "promise-limit": "^2.7.0",
     "puppeteer": "^20.7.4",
     "sharp": "^0.33.3",
     "swagger-jsdoc": "^6.2.8",
