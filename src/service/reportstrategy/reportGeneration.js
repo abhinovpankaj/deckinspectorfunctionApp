@@ -63,7 +63,7 @@ class ReportGeneration{
                     var projurl = project.data.item.url===''?'https://deckinspectorsappdata.blob.core.windows.net/highlandmountainshadow/image_1.png':
                     project.data.item.url;
 
-                    var urlArray = projurl.toString().split('/');
+                    var urlArray = decodeURIComponent(projurl.toString()).split('/');
                     var imageBuffer ;
                     if (projurl.includes('deckinspectorsappdata')) {
                         imageBuffer = await blobManager.getBlobBuffer(urlArray[urlArray.length-1],urlArray[urlArray.length-2]);
@@ -91,7 +91,7 @@ class ReportGeneration{
                     var projurl = headerImageURL===''?'https://deckinspectorsappdata.blob.core.windows.net/highlandmountainshadow/image_1.png':
                     headerImageURL;
 
-                    var urlArray = projurl.toString().split('/');
+                    var urlArray = decodeURIComponent(projurl.toString()).split('/');
                     var imageBuffer ;
                     if (projurl.includes('deckinspectorsappdata')) {
                         imageBuffer = await blobManager.getBlobBuffer(urlArray[urlArray.length-1],urlArray[urlArray.length-2]);
@@ -148,7 +148,7 @@ class ReportGeneration{
                     var projurl = footerImageURL===''?'https://deckinspectorsappdata.blob.core.windows.net/highlandmountainshadow/image_1.png':
                     footerImageURL;
 
-                    var urlArray = projurl.toString().split('/');
+                    var urlArray = decodeURIComponent(projurl.toString()).split('/');
                     var imageBuffer ;
                     if (projurl.includes('deckinspectorsappdata')) {
                         imageBuffer = await blobManager.getBlobBuffer(urlArray[urlArray.length-1],urlArray[urlArray.length-2]);
