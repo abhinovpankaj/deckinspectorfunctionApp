@@ -54,7 +54,7 @@ var addProjectReport = async function (projectReport, callback) {
 
 var updateProjectReport = async function  (projectReport, callback) {
     
-    var result = await mongo.ProjectReports.updateOne({ _id: projectReport._id }, { $set: projectReport },{upsert:true});
+    var result = await mongo.ProjectReports.updateOne({ _id: ObjectId(projectReport._id) }, { $set: {url:projectReport.url,isReportInProgress:false} },{upsert:false});
     
     if (result.modifiedCount==1) {
         callback(null,result);

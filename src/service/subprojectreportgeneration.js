@@ -1,26 +1,39 @@
 const subProject = require("../model/subproject");
 const {generateReportForLocation, generateDocReportForLocation} = require("./sectionParts/util/locationGeneration/locationreportgeneration.js")
 const LocationType = require("../model/locationType.js");
-
+var promiseLimit = require('promise-limit')
 
 const generateDocReportForSubProject = async function generateDocReportForSubProject(subProjectId,companyName,
     sectionImageProperties,
     reportType)
 {
+    var limit = promiseLimit(50)
     const subProjectData = await subProject.getSubProjectById(subProjectId);
     const subprojectName = subProjectData.data.item.name;
     const promises = [];
     const subProjectdoc = [];
     const orderdLocationsInSubProject = reordersubProjectLocations(subProjectData.data.item.children);
-    for (let key in orderdLocationsInSubProject) {
-        const promise = generateDocReportForLocation(orderdLocationsInSubProject[key]._id,companyName,sectionImageProperties,reportType,subprojectName)
-            .then((loc_html) => {
-                subProjectdoc[key]= loc_html;
-            });
-        promises.push(promise);
+
+    await Promise.all(orderdLocationsInSubProject.map((key) => {
+
+        return limit(() => generateDocReportForLocation(key._id,companyName,sectionImageProperties,reportType,subprojectName));
+      })).then(loc_html => {
         
-    }
-    await Promise.all(promises);
+        console.log('path:', loc_html)
+        // reportDocList[loc_doc.key]=loc_doc.paths;
+        subProjectdoc.push(...loc_html);
+      })
+
+
+    // for (let key in orderdLocationsInSubProject) {
+    //     const promise = generateDocReportForLocation(orderdLocationsInSubProject[key]._id,companyName,sectionImageProperties,reportType,subprojectName)
+    //         .then((loc_html) => {
+    //             subProjectdoc[key]= loc_html;
+    //         });
+    //     promises.push(promise);
+        
+    // }
+    // await Promise.all(promises);
     let subProjectdocSorted = [];
     for (let key in subProjectdoc) {
         subProjectdocSorted.push (...subProjectdoc[key]);

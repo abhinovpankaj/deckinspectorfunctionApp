@@ -25,6 +25,7 @@ const emailService = require("../service/emailService.js");
 var tenantService = require('../service/tenantService');
 const ProjectReportType = require("../model/projectReportType.js");
 const { saveDocReportForLocation } = require('../service/sectionParts/util/locationGeneration/locationreportgeneration.js');
+const { fork } = require('child_process');
 router.route('/add')
 .post(async function (req, res) {
   try {
@@ -450,7 +451,18 @@ router.route('/generatereport')
                     }else{
                         projectReportId = result._id;
                     }
-                    createDocument(companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName)                
+                    //createDocument(companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName)                
+                    // Fork a child process
+                    const child = fork('service/forkedchild.js',[companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName]);
+
+                    // Send a message to the child process
+                    child.send({ action: 'createDoc' });
+
+                    // Listen for messages from the child process
+                    child.on('message', (message) => {
+                      console.log('Message from child:', message);
+                      child.kill();
+                    });
                     console.log(result)
                 }
             });
@@ -469,6 +481,7 @@ router.route('/generatereport')
       
         
     await generateProjectReport(projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath);
+    
     const absolutePath = path.resolve(`${docpath}.${reportFormat}`);
 
     const now = new Date();

@@ -12,13 +12,14 @@ const blobManager = require("../../database/uploadimage");
 const jo = require('jpeg-autorotate');
 const os = require('os');
 const sharp = require('sharp');
+var promiseLimit = require('promise-limit')
 var tenantService = require('../tenantService.js');
 
 class ReportGeneration{
     async generateReportDoc(project,companyName,sectionImageProperties,reportType){
         try{
          //   console.time("generateReportDocs");
-            
+            var limit = promiseLimit(50)
             const promises = [];
             const reportDocList = []; 
             project.data.item.projectHeader = this.getProjectHeader(reportType);
@@ -185,15 +186,27 @@ class ReportGeneration{
             fs.writeFileSync(filePath, buffer);
             let projectHtml = [filePath];
             const orderedProjects = this.reOrderProjects(project.data.item.children);
-            for (let key in orderedProjects) {
-                const promise = this.getReportDoc(orderedProjects[key],companyName,sectionImageProperties,reportType)
-                .then((loc_doc) => {
-                 
-                 reportDocList[key]=loc_doc;
-                });
-              promises.push(promise);
-            }
-            await Promise.all(promises);
+            
+            await Promise.all(orderedProjects.map((key) => {
+
+                return limit(() => this.getReportDoc(key,companyName,sectionImageProperties,reportType));
+              })).then(loc_doc => {
+                
+                //console.log('path:', loc_doc)
+                // reportDocList[loc_doc.key]=loc_doc.paths;
+                reportDocList.push(...loc_doc);
+              })
+
+            // for (let key in orderedProjects) {
+            //     const promise = limit(()=> this.getReportDoc(orderedProjects[key],companyName,sectionImageProperties,reportType)
+            //     .then((loc_doc) => {                 
+            //      reportDocList[key]=loc_doc;
+            //     }));
+
+            //   promises.push(promise);
+            // }
+            
+            // await Promise.all(promises);
             
             for (let key in reportDocList) {
                 projectHtml.push(...reportDocList[key]);

@@ -10,6 +10,7 @@ const path = require('path');
 var fsp = require('fs/promises');
 
 
+
 const generateProjectReport = async function generate(projectId,sectionImageProperties,companyName,reportType,
     reportFormat, fileName)
 {
