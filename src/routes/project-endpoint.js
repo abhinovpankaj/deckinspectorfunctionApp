@@ -453,7 +453,7 @@ router.route('/generatereport')
                     }
                     //createDocument(companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName)                
                     // Fork a child process
-                    const child = fork('service/forkedchild.js',[companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName]);
+                    const child = fork('src/service/forkedchild.js',[companyIdentifier,hostname,projectId,sectionImageProperties,companyName,reportType, reportFormat, docpath,uploader,projectReportId,projectName]);
 
                     // Send a message to the child process
                     child.send({ action: 'createDoc' });
