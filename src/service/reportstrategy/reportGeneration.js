@@ -19,7 +19,7 @@ class ReportGeneration{
     async generateReportDoc(project,companyName,sectionImageProperties,reportType){
         try{
          //   console.time("generateReportDocs");
-            var limit = promiseLimit(50)
+            var limit = promiseLimit(20)
             const promises = [];
             const reportDocList = []; 
             project.data.item.projectHeader = this.getProjectHeader(reportType);

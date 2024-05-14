@@ -7,7 +7,7 @@ const generateDocReportForSubProject = async function generateDocReportForSubPro
     sectionImageProperties,
     reportType)
 {
-    var limit = promiseLimit(50)
+    var limit = promiseLimit(10)
     const subProjectData = await subProject.getSubProjectById(subProjectId);
     const subprojectName = subProjectData.data.item.name;
     const promises = [];
