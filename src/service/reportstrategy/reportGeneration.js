@@ -80,10 +80,10 @@ class ReportGeneration{
                   try {
                     var {buffer} = await jo.rotate(Buffer.from(imageBuffer), {quality:100});
                     
-                    return { height: 15,width: 19.8,  data: buffer, extension: '.jpg' };
+                    return { height: 13,width: 19.8,  data: buffer, extension: '.jpg' };
                   } catch (error) {
                     //console.log('An error occurred when rotating the file: ' + error);
-                    return { height: 15,width: 19.8,  data: imageBuffer, extension: '.jpg' };
+                    return { height: 13,width: 19.8,  data: imageBuffer, extension: '.jpg' };
                   }                                                  
                 },
                 headertile: async () => {
