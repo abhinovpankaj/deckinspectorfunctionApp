@@ -42,7 +42,7 @@ class ReportGeneration{
                 footerImageURL = tenantDetails.tenant.icons.footer;
                 showfooter = tenantDetails.tenant.showFooterlogo;
             }
-            var createdAtString = project.data.item.createdat;
+            var createdAtString = project.data.item.editedat;
             var date = new Date(createdAtString);
             const buffer = await docxTemplate.createReport({
             template,
