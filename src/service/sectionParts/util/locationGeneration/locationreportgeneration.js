@@ -12,7 +12,7 @@ const blobManager = require("../../../../database/uploadimage");
 const jo = require('jpeg-autorotate');
 const os = require('os');
 
-const generateDocReportForLocation = async function (locationId,companyName, sectionImageProperties, reportType,subprojectName='') {
+const generateDocReportForLocation = async function (locationId,companyName, sectionImageProperties, reportType,formId,subprojectName='') {
   try {
     const sectionDataDoc =
     [];
@@ -55,11 +55,20 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
     }
     var template;
     
-    if (subprojectName=='') {
-      template = fs.readFileSync(path.join(__dirname,'Deck2AllData.docx'));
+    if (formId==null) {
+      if (subprojectName=='') {
+        template = fs.readFileSync(path.join(__dirname,'Deck2AllData.docx'));
+      }else{
+        template = fs.readFileSync(path.join(__dirname,'DeckAllData.docx'));
+      }
     }else{
-      template = fs.readFileSync(path.join(__dirname,'DeckAllData.docx'));
+      if (subprojectName=='') {
+        template = fs.readFileSync(path.join(__dirname,'Deck2AllData_Generic.docx'));
+      }else{
+        template = fs.readFileSync(path.join(__dirname,'DeckAllData_Generic.docx'));
+      }
     }
+    
     
       if (reportType === projectReportType.INVASIVEONLY || reportType === projectReportType.INVASIVEVISUAL) {
         if (location.data.item.isInvasive && location.data.item.isInvasive === true) {
@@ -216,7 +225,13 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
           if (isLocationFileExists(filePath)) {
             sectionDataDoc.push(filePath);
           } else{
-            const sectionData =  await sections.getSectionById(section._id);         
+            var sectionData;
+            if (formId==null) {
+               sectionData =  await sections.getSectionById(section._id);
+            }else{
+               sectionData =  await sections.getDynamicSectionById(section._id);
+            }
+                     
             if(sectionData.data && sectionData.data.item)
             {
             var sectionDocValues;
@@ -231,8 +246,8 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                 name: sectionData.data.item.name,                  
               };
             }else{
-                
-                sectionDocValues = {
+                if (formId==null) {
+                  sectionDocValues = {
                   isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
                   reportType : reportType,
                   buildingName: subprojectName,
@@ -252,12 +267,29 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                   awe:sectionData.data.item.awe,
                   images:sectionData.data.item.images
                   
-              };
+                  };
+                }else{
+                  sectionDocValues = {
+                    isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                    reportType : reportType,
+                    buildingName: subprojectName,
+                    parentType: locationType,
+                    parentName: location.data.item.name,
+                    name: sectionData.data.item.name,                    
+                  
+                    furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                    
+                    additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                    questions:sectionData.data.item.questions,
+                    images:sectionData.data.item.images
+                    
+                  };
+                }
+              }   
             }
             var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
             sectionDataDoc[index]=filename;
-          }
-          }
+          }         
         }));
         return sectionDataDoc;
       }
@@ -567,6 +599,9 @@ const getLocationDoc = async function(locationId,sectionId,template,sectionDocVa
             }
           
           return tempArray;
+        },
+        answersString:async (answers)=>{
+            return answers.join(', ');
         },
         // getadditionalconsiderations: ()=>{
         //     console.log('inside html fetch');

@@ -189,7 +189,7 @@ class ReportGeneration{
             
             await Promise.all(orderedProjects.map((key) => {
 
-                return limit(() => this.getReportDoc(key,companyName,sectionImageProperties,reportType));
+                return limit(() => this.getReportDoc(key,companyName,sectionImageProperties,reportType,project.data.item.formId));
               })).then(loc_doc => {
                 
                 //console.log('path:', loc_doc)
@@ -298,14 +298,14 @@ class ReportGeneration{
         return orderedProjects;
     }
     
-    async getReportDoc(child,companyName,sectionImageProperties,reportType){
+    async getReportDoc(child,companyName,sectionImageProperties,reportType,formId){
         try{
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
-                const loc_html =  await generateDocReportForLocation(child._id,companyName,sectionImageProperties,reportType);
+                const loc_html =  await generateDocReportForLocation(child._id,companyName,sectionImageProperties,reportType,formId.toString());
                 return loc_html;
             }else if(child.type ===  ProjectChildType.SUBPROJECT){
-                const subProjectHtml = await generateDocReportForSubProject(child._id,companyName,sectionImageProperties,reportType);
+                const subProjectHtml = await generateDocReportForSubProject(child._id,companyName,sectionImageProperties,reportType,formId.toString());
                 return subProjectHtml;
             }
         }catch(error){

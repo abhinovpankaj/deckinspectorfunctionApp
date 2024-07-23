@@ -5,7 +5,7 @@ var promiseLimit = require('promise-limit')
 
 const generateDocReportForSubProject = async function generateDocReportForSubProject(subProjectId,companyName,
     sectionImageProperties,
-    reportType)
+    reportType,formId)
 {
     var limit = promiseLimit(10)
     const subProjectData = await subProject.getSubProjectById(subProjectId);
@@ -16,7 +16,7 @@ const generateDocReportForSubProject = async function generateDocReportForSubPro
 
     await Promise.all(orderdLocationsInSubProject.map((key) => {
 
-        return limit(() => generateDocReportForLocation(key._id,companyName,sectionImageProperties,reportType,subprojectName));
+        return limit(() => generateDocReportForLocation(key._id,companyName,sectionImageProperties,reportType,formId,subprojectName));
       })).then(loc_html => {
         
         console.log('path:', loc_html)

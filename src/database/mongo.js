@@ -19,6 +19,7 @@ var Connect = async function () {
         module.exports.SubProjects = client.db(dbName).collection('SubProject');
         module.exports.Locations = client.db(dbName).collection('Location');
         module.exports.Sections = client.db(dbName).collection('VisualSection');
+        module.exports.DynamicSections = client.db(dbName).collection('DynamicVisualSection');
         module.exports.Users = client.db(dbName).collection('Users');
         module.exports.ProjectDocuments = client.db(dbName).collection('ProjectDocuments');
 

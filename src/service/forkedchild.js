@@ -5,6 +5,7 @@
   const SingleProjectReportGeneration = require("./reportstrategy/singleProjectReportGeneration.js")
   const projects = require("../model/project");
   const DocxMerger = require("docx-merger");
+  
   const fs = require('fs');
   const os = require('os');
   const path = require('path');
@@ -150,34 +151,32 @@ async function broadcastMessageToHub(projectName, isReady=true){
               
               var projectDocxList=  await getProjectDoc(project, sectionImageProperties,companyName, reportType,reportFormat);
               var fileList=[];
+              //var headerPath = projectDocxList.shift();              
               projectDocxList.forEach(reportChunk => {
                   if (reportChunk!==undefined) {
                       fileList.push(fs.readFileSync(reportChunk, 'binary'));
                   }
                   
-              });
+              });              
               //unlink all
               
               // projectDocxList.forEach(filechunk=>{
               //     if (fs.existsSync(filechunk)) {
               //         fs.unlinkSync(filechunk);
               //     }              
-              // });
-  
-  
+              // });  
               var docx = new DocxMerger({},fileList);
-              // const outputDir = "projectreportfiles";
-              // if (!fs.existsSync(outputDir)) {
-              // fs.mkdirSync(outputDir);
-              // }
-              //const docFilePath = path.join(outputDir,`${fileName}.docx`);
+             // const transientPath = path.resolve(`${fileName}_transient.${reportFormat}`);
+              const absolutePath = path.resolve(`${fileName}.${reportFormat}`);
+              //console.log(transientPath);
               docx.save('nodebuffer', async function (data) {
-                  const absolutePath = path.resolve(`${fileName}.${reportFormat}`);
-                  console.log(absolutePath);
+                  
                   console.log('inside document save');
-                    await fsp.writeFile(absolutePath, data);
-                  //  callback(docFilePath);     
-              });         
+                  await fsp.writeFile(absolutePath, data);       
+                  //recreateFile(transientPath,headerPath,fileName,reportFormat) ;   
+              });
+              
+              
           }
           
       }
@@ -190,6 +189,24 @@ async function broadcastMessageToHub(projectName, isReady=true){
       
   };
   
+  async function recreateFile(transientPath,headerPath,fileName,reportFormat){
+    fs.copyFileSync(headerPath,'/Users/abhinovpankaj/Development/Projects/deckinspectorfunctionApp/src/projectreportfiles/projectheader.docx');
+    console.log(headerPath);
+    var headerBinary = fs.readFileSync('/Users/abhinovpankaj/Development/Projects/deckinspectorfunctionApp/src/projectreportfiles/projectheader.docx', 'binary');
+    var transientBinary = fs.readFileSync(transientPath, 'binary');
+    try {
+      var newdocx = new DocxMerger({pageBreak:true},[headerBinary,transientBinary]);
+      newdocx.save('nodebuffer', async function (data) {
+          const absolutePath = path.resolve(`${fileName}.${reportFormat}`);
+          console.log(absolutePath);
+          console.log('inside internal document save');
+          await fsp.writeFile(absolutePath, data);
+          //fs.unlink(transientPath);
+      }); 
+    } catch (error) {
+      console.log(error);
+    }  
+  }
   async function getProjectDoc(project, sectionImageProperties,companyName, reportType,reportFormat='pdf') {
       if (project.data.item.projecttype === "singlelevel") {
          return await SingleProjectReportGeneration.generateReportDoc(project,companyName, sectionImageProperties, reportType);

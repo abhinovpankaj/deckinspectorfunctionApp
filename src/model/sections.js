@@ -127,6 +127,41 @@ var capitalizeWords = function (word) {
     return word;
 }
 
+var getDynamicSectionById = async function (id) {
+    var response = {};
+    try {
+        const result = await mongo.DynamicSections.findOne({ _id: new ObjectId(id) }); 
+        if (result) {
+            //transformData(result);
+            response = {
+                "data": {
+                    "item": result,
+                    "message": "Section found.",
+                    "code": 201
+                }
+            };
+            return response;
+        } else {
+            response = {
+                "error": {
+                    "code": 401,
+                    "message": "No Section found."
+                }
+            }
+            return response;
+        }
+    }
+    catch (err) {
+        response = {
+            "error": {
+                "code": 500,
+                "message": "Error fetching Section.",
+                "errordata": err
+            }
+        }
+        return response;
+    }
+};
 
 var getSectionById = async function (id) {
     var response = {};
@@ -557,5 +592,6 @@ module.exports = {
     getSectionById,
     addRemoveImages,
     getSectionMetaDataForLocationId,
-    editSection
+    editSection,
+    getDynamicSectionById
 };
