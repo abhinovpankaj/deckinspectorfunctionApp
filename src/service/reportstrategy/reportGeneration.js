@@ -299,13 +299,14 @@ class ReportGeneration{
     }
     
     async getReportDoc(child,companyName,sectionImageProperties,reportType,formId){
+        var stringformId= formId==null?null:formId.toString();
         try{
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
-                const loc_html =  await generateDocReportForLocation(child._id,companyName,sectionImageProperties,reportType,formId.toString());
+                const loc_html =  await generateDocReportForLocation(child._id,companyName,sectionImageProperties,reportType,stringformId);
                 return loc_html;
             }else if(child.type ===  ProjectChildType.SUBPROJECT){
-                const subProjectHtml = await generateDocReportForSubProject(child._id,companyName,sectionImageProperties,reportType,formId.toString());
+                const subProjectHtml = await generateDocReportForSubProject(child._id,companyName,sectionImageProperties,reportType,stringformId);
                 return subProjectHtml;
             }
         }catch(error){
