@@ -735,8 +735,8 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
           }
           
           try {
-              
-              var urlArray = imageurl.toString().split('/');
+            var urlArray = decodeURIComponent(imageurl.toString()).split('/');
+              //var urlArray = imageurl.toString().split('/');
               var imagebuffer;
               if (imageurl.includes('deckinspectorsappdata')) {
                  imagebuffer = await blobManager.getBlobBuffer(urlArray[urlArray.length-1],urlArray[urlArray.length-2]);
