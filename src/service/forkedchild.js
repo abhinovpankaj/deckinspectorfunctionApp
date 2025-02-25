@@ -154,7 +154,13 @@ async function broadcastMessageToHub(projectName, isReady=true){
               //var headerPath = projectDocxList.shift();              
               projectDocxList.forEach(reportChunk => {
                   if (reportChunk!==undefined) {
-                      fileList.push(fs.readFileSync(reportChunk, 'binary'));
+                      try {
+                        fileList.push(fs.readFileSync(reportChunk, 'binary'));
+                      } catch (error) {
+                        console.log("Error in reading file: "+reportChunk);
+                        console.log(error);
+                      }
+                      
                   }
                   
               });              
