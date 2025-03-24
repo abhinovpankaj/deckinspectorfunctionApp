@@ -214,12 +214,12 @@ async function broadcastMessageToHub(projectName, isReady=true){
     }  
   }
   async function getProjectDoc(project, sectionImageProperties,companyName, reportType,reportFormat='pdf') {
-      if (project.data.item.projecttype === "singlelevel") {
-         return await SingleProjectReportGeneration.generateReportDoc(project,companyName, sectionImageProperties, reportType);
-      }
-      else if (project.data.item.projecttype  === "multilevel") {
+      // if (project.data.item.projecttype === "singlelevel") {
+      //    return await SingleProjectReportGeneration.generateReportDoc(project,companyName, sectionImageProperties, reportType);
+      // }
+      // else if (project.data.item.projecttype  === "multilevel") {
          return await ReportGeneration.generateReportDoc(project,companyName, sectionImageProperties, reportType);
-      }
+      // }
   };
   
   async function getProjectHtml(project, sectionImageProperties, reportType) {

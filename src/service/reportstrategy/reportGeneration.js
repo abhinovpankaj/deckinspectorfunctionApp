@@ -1,5 +1,5 @@
 const {generateReportForSubProject,generateDocReportForSubProject} = require("../subprojectreportgeneration.js");
-const {generateReportForLocation,generateDocReportForLocation} = require("../sectionParts/util/locationGeneration/locationreportgeneration.js")
+const {generateReportForLocation,generateDocReportForLocation,generateDocReportForSection} = require("../sectionParts/util/locationGeneration/locationreportgeneration.js")
 const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
@@ -185,32 +185,26 @@ class ReportGeneration{
             var filePath = path.join(outputDir,'projectheader.docx');
             fs.writeFileSync(filePath, buffer);
             let projectHtml = [filePath];
-            const orderedProjects = this.reOrderProjects(project.data.item.children);
-            
-            await Promise.all(orderedProjects.map((key) => {
+            let orderedProjects =[];
+            if (project.data.item.projecttype === 'singlelevel') {
+                orderedProjects = project.data.item.sections;
+                var sectionsFile= await this.getReportDocSingleLevelProj(orderedProjects,project.data.item._id,project.data.item.isInvasive,companyName,sectionImageProperties,reportType,project.data.item.formId);
+                projectHtml.push(...sectionsFile);
+            }else{
+                orderedProjects = this.reOrderProjects(project.data.item.children);
+                await Promise.all(orderedProjects.map((key) => {
 
-                return limit(() => this.getReportDoc(key,companyName,sectionImageProperties,reportType,project.data.item.formId));
-              })).then(loc_doc => {
-                
-                //console.log('path:', loc_doc)
-                // reportDocList[loc_doc.key]=loc_doc.paths;
-                reportDocList.push(...loc_doc);
-              })
-
-            // for (let key in orderedProjects) {
-            //     const promise = limit(()=> this.getReportDoc(orderedProjects[key],companyName,sectionImageProperties,reportType)
-            //     .then((loc_doc) => {                 
-            //      reportDocList[key]=loc_doc;
-            //     }));
-
-            //   promises.push(promise);
-            // }
-            
-            // await Promise.all(promises);
-            
-            for (let key in reportDocList) {
-                projectHtml.push(...reportDocList[key]);
+                    return limit(() => this.getReportDoc(key,companyName,sectionImageProperties,reportType,project.data.item.formId));
+                  })).then(loc_doc => {
+                    reportDocList.push(...loc_doc);
+                  })
+                for (let key in reportDocList) {
+                    projectHtml.push(...reportDocList[key]);
+                }
             }
+             
+            
+            
             //console.timeEnd("generateReportDoc");
             return projectHtml;
             
@@ -298,9 +292,23 @@ class ReportGeneration{
         return orderedProjects;
     }
     
+    async getReportDocSingleLevelProj(sections,projectId,isProjectInvasive,companyName,sectionImageProperties,reportType,formId){
+        var stringformId= formId==null?null:formId.toString();
+        try{    
+            const section_html =  await generateDocReportForSection(sections,projectId,isProjectInvasive,companyName,sectionImageProperties,reportType,stringformId);
+            return section_html;    
+        }catch(error){
+            console.log(error);
+        }
+    }
     async getReportDoc(child,companyName,sectionImageProperties,reportType,formId){
         var stringformId= formId==null?null:formId.toString();
         try{
+            //for single level projects no type is defined.
+            if (child.type==undefined) {
+                const section_html =  await generateDocReportForSection(child._id,companyName,sectionImageProperties,reportType,true,stringformId);
+                return section_html;
+            }
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
                 const loc_html =  await generateDocReportForLocation(child._id,companyName,sectionImageProperties,reportType,stringformId);

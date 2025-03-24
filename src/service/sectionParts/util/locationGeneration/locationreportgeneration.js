@@ -24,24 +24,24 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
     } else {
       var mysections = location.data.item.sections;
           
-      if(!mysections)
-      {
-        return "";
-      }
-      const newSections = mysections.filter(section =>  isSectionIncluded(reportType, section));
-      newSections.sort(function(section1,section2){
-      if (section1.isInvasive && !section2.isInvasive) {
-          return -1; // subProj1 comes before subProj2
-      } else if (!section1.isInvasive && section2.isInvasive) {
-          return 1; 
-      } else{
-        if (section1.sequenceNo==null) {
-          return section1._id-section2._id;
-        }else{
-          return (section1.sequenceNo-section2.sequenceNo);
-        }         
-      } 
-    });
+    if(!mysections)
+    {
+      return "";
+    }
+    const newSections = mysections.filter(section =>  isSectionIncluded(reportType, section));
+    newSections.sort(function(section1,section2){
+    if (section1.isInvasive && !section2.isInvasive) {
+        return -1; // subProj1 comes before subProj2
+    } else if (!section1.isInvasive && section2.isInvasive) {
+        return 1; 
+    } else{
+      if (section1.sequenceNo==null) {
+        return section1._id-section2._id;
+      }else{
+        return (section1.sequenceNo-section2.sequenceNo);
+      }         
+    } 
+  });
     
     var locationType='';
     if( location.data.item.type==='buildinglocation'){
@@ -294,6 +294,278 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
         return sectionDataDoc;
       }
     }
+  } catch (error) {
+    console.log("Error is " + error);
+    return "";
+  }
+}
+
+const generateDocReportForSection = async function (mysections,locationId,isProjectInvasive,companyName, sectionImageProperties, reportType,formId,subprojectName='') {
+  try {
+    const sectionDataDoc =
+    [];  
+    
+    if(!mysections)
+    {
+      return "";
+    }
+    const newSections = mysections.filter(section =>  isSectionIncluded(reportType, section));
+    newSections.sort(function(section1,section2){
+    if (section1.isInvasive && !section2.isInvasive) {
+        return -1; // subProj1 comes before subProj2
+    } else if (!section1.isInvasive && section2.isInvasive) {
+        return 1; 
+    } else{
+      if (section1.sequenceNo==null) {
+        return section1._id-section2._id;
+      }else{
+        return (section1.sequenceNo-section2.sequenceNo);
+      }         
+    } 
+  });
+    
+    var locationType='Project Location';
+    
+    var template;
+    
+    if (formId==null) {
+      if (subprojectName=='') {
+        template = fs.readFileSync(path.join(__dirname,'Deck2AllData.docx'));
+      }else{
+        template = fs.readFileSync(path.join(__dirname,'DeckAllData.docx'));
+      }
+    }else{
+      if (subprojectName=='') {
+        template = fs.readFileSync(path.join(__dirname,'Deck2AllData_Generic.docx'));
+      }else{
+        template = fs.readFileSync(path.join(__dirname,'DeckAllData_Generic.docx'));
+      }
+    }
+    
+    
+      if (reportType === projectReportType.INVASIVEONLY || reportType === projectReportType.INVASIVEVISUAL) {
+        if (isProjectInvasive) {
+          await Promise.all(newSections.map(async (section, index) => {
+            // check if doct is created
+            
+            const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);
+            if (isLocationFileExists(filePath)) {
+              sectionDataDoc.push(filePath);
+            }else{
+              const sectionData =  await sections.getSectionById(section._id);
+              const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section._id);
+              const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section._id);
+              if(sectionData.data && sectionData.data.item)
+              {
+                var sectionDocValues;
+  
+                if (reportType===ProjectReportType.INVASIVEONLY ) {
+                  if (invasiveSectionData.data && invasiveSectionData.data.item) {
+                    
+                    if (conclusiveSectionData.data && conclusiveSectionData.data.item) {
+                      sectionDocValues = {
+                        isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                        reportType : reportType,
+                        buildingName: subprojectName,
+                        parentType: locationType,
+                        parentName: location.data.item.name,
+                        name: sectionData.data.item.name,
+                        furtherInvasiveRequired: invasiveSectionData.data.item.postinvasiverepairsrequired?'true':'false',
+                        invasiveDesc: invasiveSectionData.data.item.invasiveDescription,
+                        invasiveImages : invasiveSectionData.data.item.invasiveimages,
+                        conclusiveImages : conclusiveSectionData.data.item.conclusiveimages,
+                        propowneragreed:conclusiveSectionData.data.item.propowneragreed?'true':'false',
+                        additionalconsiderations:conclusiveSectionData.data.item.conclusiveconsiderations,
+                        conclusiveeee:conclusiveSectionData.data.item.eeeconclusive,
+                        conclusivelbc:conclusiveSectionData.data.item.lbcconclusive,
+                        conclusiveawe:conclusiveSectionData.data.item.aweconclusive,
+                        invasiverepairsinspectedandcompleted:conclusiveSectionData.data.item.invasiverepairsinspectedandcompleted?'true':'false',
+                        };
+                    }else{
+                      sectionDocValues = {
+                        isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                        reportType : reportType,
+                        buildingName: subprojectName,
+                        parentType: locationType,
+                        parentName: location.data.item.name,
+                        name: sectionData.data.item.name,
+                        furtherInvasiveRequired: invasiveSectionData.data.item.postinvasiverepairsrequired?'true':'false',
+                        invasiveDesc: invasiveSectionData.data.item.invasiveDescription,
+                        invasiveImages : invasiveSectionData.data.item.invasiveimages,   
+                        invasiverepairsinspectedandcompleted:false
+                        };
+                    }
+                    var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                    sectionDataDoc[index]= filename;  
+                    }
+                  }else{
+                    if (invasiveSectionData.data && invasiveSectionData.data.item) {
+                      if (conclusiveSectionData.data && conclusiveSectionData.data.item) {
+                      sectionDocValues = {
+                        isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                        reportType : reportType,
+                        buildingName: subprojectName,
+                        parentType: locationType,
+                        parentName: location.data.item.name,
+                        name: sectionData.data.item.name,
+                        exteriorelements: sectionData.data.item.exteriorelements.toString().replaceAll(',',', '),
+                        waterproofing:sectionData.data.item.waterproofingelements.toString().replaceAll(',',', '),
+                        visualreview:sectionData.data.item.visualreview,
+                        signsofleak : sectionData.data.item.visualsignsofleak=='True'?'Yes':'No',
+                        furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                        conditionalassesment:sectionData.data.item.conditionalassessment=='Futureinspection'?'Future Inspection':sectionData.data.item.conditionalassessment,
+                        additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                        eee:sectionData.data.item.eee,
+                        lbc:sectionData.data.item.lbc,
+                        awe:sectionData.data.item.awe,
+                        images:sectionData.data.item.images,                      
+                        invasiveDesc: invasiveSectionData.data.item.invasiveDescription,
+                        invasiveImages : invasiveSectionData.data.item.invasiveimages,     
+                        furtherInvasiveRequired: invasiveSectionData.data.item.postinvasiverepairsrequired?'true':'false',                   
+                        conclusiveImages : conclusiveSectionData.data.item.conclusiveimages,
+                        propowneragreed:conclusiveSectionData.data.item.propowneragreed?'true':'false',
+                        conclusiveadditionalconsiderations:conclusiveSectionData.data.item.conclusiveconsiderations,
+                        conclusiveeee:conclusiveSectionData.data.item.eeeconclusive,
+                        conclusivelbc:conclusiveSectionData.data.item.lbcconclusive,
+                        conclusiveawe:conclusiveSectionData.data.item.aweconclusive,
+                        invasiverepairsinspectedandcompleted:conclusiveSectionData.data.item.invasiverepairsinspectedandcompleted?'true':'false',
+                        };
+                      }else{
+                        sectionDocValues = {
+                          isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                          reportType : reportType,
+                          buildingName: subprojectName,
+                          parentType: locationType,
+                          parentName: location.data.item.name,
+                          name: sectionData.data.item.name,
+                          exteriorelements: sectionData.data.item.exteriorelements.toString().replaceAll(',',', '),
+                          waterproofing:sectionData.data.item.waterproofingelements.toString().replaceAll(',',', '),
+                          visualreview:sectionData.data.item.visualreview,
+                          signsofleak : sectionData.data.item.visualsignsofleak=='True'?'Yes':'No',
+                          furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                          conditionalassesment:sectionData.data.item.conditionalassessment=='Futureinspection'?'Future Inspection':sectionData.data.item.conditionalassessment,
+                          additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                          eee:sectionData.data.item.eee,
+                          lbc:sectionData.data.item.lbc,
+                          awe:sectionData.data.item.awe,
+                          images:sectionData.data.item.images,
+                          furtherInvasiveRequired: false,
+                          invasiveDesc: invasiveSectionData.data.item.invasiveDescription,
+                          invasiveImages : invasiveSectionData.data.item.invasiveimages,                       
+                          invasiverepairsinspectedandcompleted:'false'
+                        };
+                      }
+                    }else{
+                      sectionDocValues = {
+                        isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                        reportType : reportType,
+                        buildingName: subprojectName,
+                        parentType: locationType,
+                        //parentName: location.data.item.name,
+                        name: sectionData.data.item.name,
+                        exteriorelements: sectionData.data.item.exteriorelements.toString().replaceAll(',',', '),
+                        waterproofing:sectionData.data.item.waterproofingelements.toString().replaceAll(',',', '),
+                        visualreview:sectionData.data.item.visualreview,
+                        signsofleak : sectionData.data.item.visualsignsofleak=='True'?'Yes':'No',
+                        furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                        conditionalassesment:sectionData.data.item.conditionalassessment=='Futureinspection'?'Future Inspection':sectionData.data.item.conditionalassessment,
+                        additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                        eee:sectionData.data.item.eee,
+                        lbc:sectionData.data.item.lbc,
+                        awe:sectionData.data.item.awe,
+                        images:sectionData.data.item.images,
+                        furtherInvasiveRequired: false,
+                        invasiveDesc: 'Invasive inspection not done',//invasiveSectionData.data.item.invasiveDescription,
+                        invasiveImages : [],//invasiveSectionData.data.item.invasiveimages,   
+                        invasiverepairsinspectedandcompleted:false
+                        };
+                    }           
+                    var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                    sectionDataDoc.push(filename);  
+                  
+                }
+                
+              }
+            }             
+          }));
+          return sectionDataDoc;
+        }else{
+          return "";
+        }
+      } else if (reportType === projectReportType.VISUALREPORT) {
+          await Promise.all(newSections.map(async (section, index) => {    
+          const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);      
+          if (isLocationFileExists(filePath)) {
+            sectionDataDoc.push(filePath);
+          } else{
+            var sectionData;
+            if (formId==null) {
+               sectionData =  await sections.getSectionById(section._id);
+            }else{
+               sectionData =  await sections.getDynamicSectionById(section._id);
+            }
+                     
+            if(sectionData.data && sectionData.data.item)
+            {
+            var sectionDocValues;
+            
+            if (sectionData.data.item.unitUnavailable) {
+              sectionDocValues = {
+                isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                reportType : reportType,
+                buildingName: subprojectName,
+                parentType: locationType,
+                //parentName: location.data.item.name,
+                name: sectionData.data.item.name,                  
+              };
+            }else{
+                if (formId==null) {
+                  sectionDocValues = {
+                  isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                  reportType : reportType,
+                  buildingName: subprojectName,
+                  parentType: locationType,
+                  //parentName: location.data.item.name,
+                  name: sectionData.data.item.name,
+                  exteriorelements: sectionData.data.item.exteriorelements.toString().replaceAll(',',', '),
+                  waterproofing:sectionData.data.item.waterproofingelements.toString().replaceAll(',',', '),
+                  visualreview:sectionData.data.item.visualreview,
+                  signsofleak : sectionData.data.item.visualsignsofleak=='True'?'Yes':'No',
+                  furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                  conditionalassesment:sectionData.data.item.conditionalassessment=='Futureinspection'?'Future Inspection':sectionData.data.item.conditionalassessment,
+                  additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                  //additionalconsiderationshtml:sectionData.data.item.additionalconsiderationshtml,
+                  eee:sectionData.data.item.eee,
+                  lbc:sectionData.data.item.lbc,
+                  awe:sectionData.data.item.awe,
+                  images:sectionData.data.item.images
+                  
+                  };
+                }else{
+                  sectionDocValues = {
+                    isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                    reportType : reportType,
+                    buildingName: subprojectName,
+                    parentType: locationType,
+                    //parentName: location.data.item.name,
+                    name: sectionData.data.item.name,                    
+                  
+                    furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                    
+                    additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                    questions:sectionData.data.item.questions,
+                    images:sectionData.data.item.images
+                    
+                  };
+                }
+              }   
+            }
+            var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+            sectionDataDoc[index]=filename;
+          }         
+        }));
+        return sectionDataDoc;
+      }  
   } catch (error) {
     console.log("Error is " + error);
     return "";
@@ -840,4 +1112,4 @@ const isSectionIncluded = function (reportType, section) {
   }
 }
 
-module.exports = { generateReportForLocation ,generateDocReportForLocation,saveDocReportForLocation};
+module.exports = { generateReportForLocation ,generateDocReportForLocation,saveDocReportForLocation,generateDocReportForSection};
