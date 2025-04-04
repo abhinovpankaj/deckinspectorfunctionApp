@@ -349,9 +349,9 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
             // check if doct is created
             
             const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);
-            if (isLocationFileExists(filePath)) {
-              sectionDataDoc.push(filePath);
-            }else{
+            // if (isLocationFileExists(filePath)) {
+            //   sectionDataDoc.push(filePath);
+            // }else{
               const sectionData =  await sections.getSectionById(section._id);
               const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section._id);
               const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section._id);
@@ -486,7 +486,7 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
                 }
                 
               }
-            }             
+            //}             
           }));
           return sectionDataDoc;
         }else{
@@ -495,9 +495,9 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
       } else if (reportType === projectReportType.VISUALREPORT) {
           await Promise.all(newSections.map(async (section, index) => {    
           const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);      
-          if (isLocationFileExists(filePath)) {
-            sectionDataDoc.push(filePath);
-          } else{
+          // if (isLocationFileExists(filePath)) {
+          //   sectionDataDoc.push(filePath);
+          // } else{
             var sectionData;
             if (formId==null) {
                sectionData =  await sections.getSectionById(section._id);
@@ -562,7 +562,7 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
             }
             var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
             sectionDataDoc[index]=filename;
-          }         
+         // }         
         }));
         return sectionDataDoc;
       }  
