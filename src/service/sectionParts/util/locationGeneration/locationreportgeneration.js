@@ -1056,7 +1056,11 @@ function isLocationFileExists(filePath){
   
   if (!fs.existsSync(filePath)) {
     return false;
-  }else{
+  } else {
+    const stats = fs.statSync(filePath);
+    if (stats.size === 0) {
+      return false;
+    }
     return true;
   }
 }
