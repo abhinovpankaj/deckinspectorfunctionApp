@@ -848,6 +848,19 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
                   };
                 }
             }
+            if (!isDynamicForm) {
+      if (subprojectName=='') {
+        template = fs.readFileSync(path.join(__dirname,'Deck2AllData.docx'));
+      }else{
+        template = fs.readFileSync(path.join(__dirname,'DeckAllData.docx'));
+      }
+    }else{
+      if (subprojectName=='') {
+        template = fs.readFileSync(path.join(__dirname,'Deck2AllData_Generic.docx'));
+      }else{
+        template = fs.readFileSync(path.join(__dirname,'DeckAllData_Generic.docx'));
+      }
+    }
             var filename = await saveLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues, reportType) ;
             sectionDataDoc[index]=filename;
         }
