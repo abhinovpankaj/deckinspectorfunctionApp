@@ -11,6 +11,7 @@ const conclusiveSections  = require("../../../../model/conclusiveSections");
 const blobManager = require("../../../../database/uploadimage");
 const jo = require('jpeg-autorotate');
 const os = require('os');
+const { bool } = require("sharp");
 
 const generateDocReportForLocation = async function (locationId,companyName, sectionImageProperties, reportType,formId,subprojectName='') {
   try {
@@ -576,6 +577,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
   try {
     const sectionDataDoc =
     [];
+    let isDynamicForm = false;
     console.log('inside savedocfrlocation');
     const location = await locations.getLocationById(locationId);
     
@@ -786,8 +788,12 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
         });
        
           await Promise.all(newSections.map(async (section, index) => {
-          const sectionData =  await sections.getSectionById(section._id);
-          
+          var sectionData =  await sections.getSectionById(section._id);
+          if (sectionData.error&&sectionData.error.statusCode===401) {
+            console.log('trying dynamic form fetch');
+            sectionData =  await sections.getDynamicSectionById(section._id);
+            isDynamicForm = true;
+          }
           if(sectionData.data && sectionData.data.item)
           {
 
@@ -803,8 +809,8 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
                 name: sectionData.data.item.name,                  
               };
             }else{
-                
-                sectionDocValues = {
+                if (!isDynamicForm) {
+                  sectionDocValues = {
                   isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
                   reportType : reportType,
                   buildingName: subprojectName,
@@ -824,7 +830,24 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
                   awe:sectionData.data.item.awe,
                   images:sectionData.data.item.images
                   
-              };
+                  };
+                }else{
+                  sectionDocValues = {
+                    isUnitUnavailable: sectionData.data.item.unitUnavailable?'true':'false',
+                    reportType : reportType,
+                    buildingName: subprojectName,
+                    parentType: locationType,
+                    parentName: location.data.item.name,
+                    name: sectionData.data.item.name,                    
+                  
+                    furtherinvasive:sectionData.data.item.furtherinvasivereviewrequired=='True'?'Yes':'No',
+                    
+                    additionalconsiderations:sectionData.data.item.additionalconsiderations,
+                    questions:sectionData.data.item.questions,
+                    images:sectionData.data.item.images
+                    
+                  };
+                }
             }
             var filename = await saveLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues, reportType) ;
             sectionDataDoc[index]=filename;
