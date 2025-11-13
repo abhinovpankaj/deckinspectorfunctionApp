@@ -11,7 +11,6 @@ const conclusiveSections  = require("../../../../model/conclusiveSections");
 const blobManager = require("../../../../database/uploadimage");
 const jo = require('jpeg-autorotate');
 const os = require('os');
-const { bool } = require("sharp");
 
 const generateDocReportForLocation = async function (locationId,companyName, sectionImageProperties, reportType,formId,subprojectName='') {
   try {
@@ -789,7 +788,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
        
           await Promise.all(newSections.map(async (section, index) => {
           var sectionData =  await sections.getSectionById(section._id);
-          if (sectionData.error&&sectionData.error.statusCode===401) {
+          if (sectionData.error&&sectionData.error.code===401) {
             console.log('trying dynamic form fetch');
             sectionData =  await sections.getDynamicSectionById(section._id);
             isDynamicForm = true;
