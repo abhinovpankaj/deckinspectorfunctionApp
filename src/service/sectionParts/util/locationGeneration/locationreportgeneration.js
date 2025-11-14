@@ -992,10 +992,6 @@ const getLocationDoc = async function(locationId,sectionId,template,sectionDocVa
 }
 
 const saveLocationDoc = async function(locationId,sectionId,template,sectionDocValues,reportType){
-  // const options = {
-    
-  //   jpegjsMaxResolutionInMP: 2048,
-  // }
   try {
       const buffer = await docxTemplate.createReport({
       template,
@@ -1019,6 +1015,9 @@ const saveLocationDoc = async function(locationId,sectionId,template,sectionDocV
             }
           
           return tempArray;
+        },
+        answersString:async (answers)=>{
+            return answers.join(', ');
         },
         // getadditionalconsiderations: ()=>{
         //     console.log('inside html fetch');
