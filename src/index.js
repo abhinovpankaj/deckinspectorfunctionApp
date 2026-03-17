@@ -1,4 +1,5 @@
 "use strict";
+require('dotenv').config();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
@@ -9,7 +10,7 @@ var bodyParser = require('body-parser');
 const cors = require('cors');
 
 //var router   = require('routes');
-var mongo = require('./database/mongo');
+var couchbase = require('./database/couchbase');
 
 app.use(cors());
 app.timeout = 600000;
@@ -55,10 +56,17 @@ const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Initialize SERVER & DB connection once
-mongo.Connect();
-app.set('port', process.env.PORT || 3000);
-var server = app.listen(app.get('port'), async function () {
-        
-console.log('Express server listening on port ' + server.address().port);
-});
+(async () => {
+  try {
+    await couchbase.connectToDatabase();
+    console.log('✓ Couchbase connection successful');
+    app.set('port', process.env.PORT || 3000);
+    var server = app.listen(app.get('port'), function () {
+      console.log('Express server listening on port ' + server.address().port);
+    });
+  } catch (error) {
+    console.error('✗ Failed to connect to Couchbase:', error.message);
+    process.exit(1);
+  }
+})();
 
