@@ -1,109 +1,169 @@
 "use strict";
-const { ObjectId } = require('mongodb');
-// var ObjectId = require('mongodb').ObjectId;
-var mongo = require('../database/mongo');
+const { DocumentNotFoundError } = require('couchbase');
+var couchbase = require('../database/couchbase');
 const Role = require('./role');
 
-var isProjectReportinProgress = async function(project_id,reportType){
-    var result =await mongo.ProjectReports.findOne({ 'project_id': project_id,
-    'reportType': reportType });
-    if (result) {
-         return result.isReportInProgress;
-    } else{
+// Get bucket name and scope name for N1QL queries
+const DB_BUCKET_NAME = couchbase.DB_BUCKET_NAME;
+const DB_SCOPE_NAME = couchbase.DB_SCOPE_NAME;
+
+var isProjectReportinProgress = async function(project_id, reportType) {
+    try {
+        const cluster = couchbase.cluster;
+        
+        // Query using N1QL with full path
+        const result = await cluster.query(
+            `SELECT * FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
+             WHERE project_id = $1 AND reportType = $2`,
+            { parameters: [project_id, reportType] }
+        );
+        
+        if (result.rows.length > 0) {
+            return result.rows[0].isReportInProgress || false;
+        }
+        return false;
+    } catch (err) {
+        console.error('Error in isProjectReportinProgress:', err);
         return false;
     }
 }
+
 var addProjectReport = async function (projectReport, callback) {
-    var result = await mongo.ProjectReports.findOne({ 'project_id': projectReport.project_id,
-     'reportType': projectReport.reportType });
-    if (result) {
-         
-         var updateReult = await mongo.ProjectReports.updateOne({ _id: result._id },
-             { $set: projectReport },{upsert:true});
-        if (updateReult.modifiedCount=1) {
-            callback(null, result);
-        }
-        else{
-            var error = new Error("UpdateProjectReport()." );
-            error.status = 500;
-            callback (error);
-            return;
-        }
+    try {
+        const cluster = couchbase.cluster;
+        const scope = couchbase.scope;
+        const collection = scope.collection('ProjectReports');
+        
+        // Query to find existing report
+        const findResult = await cluster.query(
+            `SELECT META().id as docId, * FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
+             WHERE project_id = $1 AND reportType = $2`,
+            { parameters: [projectReport.project_id, projectReport.reportType] }
+        );
+        
+        if (findResult.rows.length > 0) {
+            // Update existing report
+            const docId = findResult.rows[0].docId;
+            const reportData = {
+                ...projectReport,
+                isReportInProgress: true
+            };
             
-    }
-    else{
-        mongo.ProjectReports.insertOne({project_id:projectReport.project_id,url: projectReport.url,name:projectReport.name,
-            timestamp:projectReport.timestamp,
-            reportType:projectReport.reportType,
-            isReportInProgress:true,
-            uploader: projectReport.uploader}, {w: 1}, function (err, result) {
-            if (err) {
-                var error = new Error("addProjectReport()." + err.message);
-                error.status = err.status;
-                callback (error);
-                return;
+            try {
+                await collection.update(docId, { reportData });
+                callback(null, reportData);
+            } catch (updateErr) {
+                const error = new Error("addProjectReport() - Update failed: " + updateErr.message);
+                error.status = 500;
+                callback(error);
             }
-            else{
-                callback (null,result);
-            }
+        } else {
+            // Insert new report
+            const docId = `report_${projectReport.project_id}_${projectReport.reportType}_${Date.now()}`;
+            const reportData = {
+                project_id: projectReport.project_id,
+                url: projectReport.url,
+                name: projectReport.name,
+                timestamp: projectReport.timestamp,
+                reportType: projectReport.reportType,
+                isReportInProgress: true,
+                uploader: projectReport.uploader
+            };
             
-        });
+            try {
+                await collection.insert(docId, reportData);
+                callback(null, reportData);
+            } catch (insertErr) {
+                const error = new Error("addProjectReport() - Insert failed: " + insertErr.message);
+                error.status = 500;
+                callback(error);
+            }
+        }
+    } catch (err) {
+        const error = new Error("addProjectReport(): " + err.message);
+        error.status = 500;
+        callback(error);
     }
-    
 };
 
-var updateProjectReport = async function  (projectReport, callback) {
-    
-    var result = await mongo.ProjectReports.updateOne({ _id: ObjectId(projectReport._id) }, { $set: {url:projectReport.url,isReportInProgress:false,fileName:projectReport.fileName} },{upsert:false});
-    
-    if (result.modifiedCount==1) {
-        callback(null,result);
-    }
-    else{
-        var error = new Error("UpdateProjectReport()." );
+var updateProjectReport = async function (projectReport, callback) {
+    try {
+        const scope = couchbase.scope;
+        const collection = scope.collection('ProjectReports');
+        
+        const updateData = {
+            url: projectReport.url,
+            isReportInProgress: false,
+            fileName: projectReport.fileName
+        };
+        
+        const result = await collection.update(projectReport._id, { updateData });
+        
+        if (result) {
+            callback(null, result);
+        } else {
+            const error = new Error("updateProjectReport(): Failed to update document");
+            error.status = 500;
+            callback(error);
+        }
+    } catch (err) {
+        const error = new Error("updateProjectReport(): " + err.message);
         error.status = 500;
-        callback (error);
-        return;
-    }   
+        callback(error);
+    }
 };
 
 var getProjectReportsbyProjectId = async function (project_id, callback) {
-    
-    var result = mongo.ProjectReports.find({project_id: project_id});  
+    try {
+        const cluster = couchbase.cluster;
         
-        const res = [];
-        for await (const doc of result){
-            res.push(doc);
-        }
-
-        if(res.length===0){
-            var error1 = new Error("getProjectReportsbyProjectId(). \nMessage: No Document Found.");
+        const result = await cluster.query(
+            `SELECT * FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
+             WHERE project_id = $1`,
+            { parameters: [project_id] }
+        );
+        
+        const reports = result.rows;
+        
+        if (reports.length === 0) {
+            const error1 = new Error("getProjectReportsbyProjectId().\nMessage: No Document Found.");
             error1.status = 404;
-            callback (error1);
-            return; 
+            callback(error1);
+            return;
         }
-        callback(null, res);
-    
+        callback(null, reports);
+    } catch (err) {
+        const error = new Error("getProjectReportsbyProjectId(): " + err.message);
+        error.status = 500;
+        callback(error);
+    }
 };
 
-var removeReport = async  function (id, callback) {
-    var result = await mongo.ProjectReports.deleteOne({_id: ObjectId(id)});
-    if(result.deletedCount==1){
-        callback(null,{status:201,message:"Document deleted successfully."});
+var removeReport = async function (id, callback) {
+    try {
+        const scope = couchbase.scope;
+        const collection = scope.collection('ProjectReports');
+        
+        const result = await collection.remove(id);
+        
+        if (result) {
+            callback(null, { status: 201, message: "Document deleted successfully." });
+        } else {
+            const error = new Error("removeReport(): Failed to delete document");
+            error.status = 500;
+            callback(error);
+        }
+    } catch (err) {
+        const error = new Error("removeReport(): " + err.message);
+        error.status = 500;
+        callback(error);
     }
-    else{
-        var error2 = new Error("Error occurred. Didn't remove document. " + err.message);
-        error2.status = err.status;
-        callback (error2);
-        return;
-    }
-    
 };
 
 module.exports = {
     addProjectReport: addProjectReport,
     getProjectReportsbyProjectId: getProjectReportsbyProjectId,
     removeReport: removeReport,
-    updateProjectReport,
-    isProjectReportinProgress
+    updateProjectReport: updateProjectReport,
+    isProjectReportinProgress: isProjectReportinProgress
 };
