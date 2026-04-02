@@ -15,6 +15,7 @@
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.1",
     "cors": "^2.8.5",
+    "couchbase": "^4.6.1",
     "docx-merger": "^1.2.2",
     "docx-templates": "^4.11.3",
     "docxtemplater": "^3.38.0",
@@ -40,7 +41,7 @@
     "puppeteer": "^20.7.4",
     "sharp": "^0.33.3",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.6.0",
+    "swagger-ui-express": "^4.6.3",
     "uuid": "^9.0.1"
   },
   "main": "src/index.js"

@@ -68,8 +68,8 @@ router.route('/delete')
 .post(async function(req,res){
   try {
       // Get user input
-      const document = req.body; 
-      projectReports.removeReport(document._id,function(err,result){
+      const document = req. body; 
+      projectReports.removeReport(document.id,function(err,result){
         if(err){
           res.status(err.status).send(err.message);
         }
