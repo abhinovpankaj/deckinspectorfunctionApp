@@ -31,8 +31,7 @@ var isProjectReportinProgress = async function(project_id, reportType) {
 var addProjectReport = async function (projectReport, callback) {
     try {
         const cluster = couchbase.cluster;
-        const scope = couchbase.scope;
-        const collection = scope.collection('ProjectReports');
+        const collection = couchbase.ProjectReports;
         
         // Query to find existing report
         const findResult = await cluster.query(
@@ -49,10 +48,10 @@ var addProjectReport = async function (projectReport, callback) {
                 isReportInProgress: true
             };
             await collection.replace(docId, reportData);
-            callback(null, reportData);
+            callback(null, { ...reportData, _id: docId });
         } else {
             // Insert new report
-            const docId = `report_${projectReport.project_id}_${projectReport.reportType}_${Date.now()}`;
+            const docId = `${projectReport.project_id}_${projectReport.reportType}_${Date.now()}`;
             const reportData = {
                 project_id: projectReport.project_id,
                 url: projectReport.url,
@@ -63,7 +62,7 @@ var addProjectReport = async function (projectReport, callback) {
                 uploader: projectReport.uploader
             };
             await collection.insert(docId, reportData);
-            callback(null, reportData);
+            callback(null, { ...reportData, _id: docId });
         }
     } catch (err) {
         const error = new Error("addProjectReport(): " + err.message);
@@ -74,8 +73,7 @@ var addProjectReport = async function (projectReport, callback) {
 
 var updateProjectReport = async function (projectReport, callback) {
     try {
-        const scope = couchbase.scope;
-        const collection = scope.collection('ProjectReports');
+        const collection = couchbase.ProjectReports;
         
         const updateData = {
             url: projectReport.url,
@@ -84,7 +82,7 @@ var updateProjectReport = async function (projectReport, callback) {
         };
         
         const result = await collection.replace(projectReport._id, updateData);
-        callback(null, result);
+        callback(null, { _id: projectReport._id, ...updateData });
     } catch (err) {
         const error = new Error("updateProjectReport(): " + err.message);
         error.status = 500;
@@ -120,8 +118,7 @@ var getProjectReportsbyProjectId = async function (project_id, callback) {
 
 var removeReport = async function (id, callback) {
     try {
-        const scope = couchbase.scope;
-        const collection = scope.collection('ProjectReports');
+        const collection = couchbase.ProjectReports;
         
         const result = await collection.remove(id);
         
