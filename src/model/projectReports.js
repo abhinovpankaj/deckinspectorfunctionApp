@@ -48,15 +48,8 @@ var addProjectReport = async function (projectReport, callback) {
                 ...projectReport,
                 isReportInProgress: true
             };
-            
-            try {
-                await collection.update(docId, { reportData });
-                callback(null, reportData);
-            } catch (updateErr) {
-                const error = new Error("addProjectReport() - Update failed: " + updateErr.message);
-                error.status = 500;
-                callback(error);
-            }
+            await collection.replace(docId, reportData);
+            callback(null, reportData);
         } else {
             // Insert new report
             const docId = `report_${projectReport.project_id}_${projectReport.reportType}_${Date.now()}`;
@@ -69,15 +62,8 @@ var addProjectReport = async function (projectReport, callback) {
                 isReportInProgress: true,
                 uploader: projectReport.uploader
             };
-            
-            try {
-                await collection.insert(docId, reportData);
-                callback(null, reportData);
-            } catch (insertErr) {
-                const error = new Error("addProjectReport() - Insert failed: " + insertErr.message);
-                error.status = 500;
-                callback(error);
-            }
+            await collection.insert(docId, reportData);
+            callback(null, reportData);
         }
     } catch (err) {
         const error = new Error("addProjectReport(): " + err.message);
@@ -97,15 +83,8 @@ var updateProjectReport = async function (projectReport, callback) {
             fileName: projectReport.fileName
         };
         
-        const result = await collection.update(projectReport._id, { updateData });
-        
-        if (result) {
-            callback(null, result);
-        } else {
-            const error = new Error("updateProjectReport(): Failed to update document");
-            error.status = 500;
-            callback(error);
-        }
+        const result = await collection.replace(projectReport._id, updateData);
+        callback(null, result);
     } catch (err) {
         const error = new Error("updateProjectReport(): " + err.message);
         error.status = 500;
