@@ -306,15 +306,15 @@ class ReportGeneration{
         try{
             //for single level projects no type is defined.
             if (child.type==undefined) {
-                const section_html =  await generateDocReportForSection(child._id,companyName,sectionImageProperties,reportType,true,stringformId);
+                const section_html =  await generateDocReportForSection(child.id,companyName,sectionImageProperties,reportType,true,stringformId);
                 return section_html;
             }
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
-                const loc_html =  await generateDocReportForLocation(child._id,companyName,sectionImageProperties,reportType,stringformId);
+                const loc_html =  await generateDocReportForLocation(child.id,companyName,sectionImageProperties,reportType,stringformId);
                 return loc_html;
             }else if(child.type ===  ProjectChildType.SUBPROJECT){
-                const subProjectHtml = await generateDocReportForSubProject(child._id,companyName,sectionImageProperties,reportType,stringformId);
+                const subProjectHtml = await generateDocReportForSubProject(child.id,companyName,sectionImageProperties,reportType,stringformId);
                 return subProjectHtml;
             }
         }catch(error){
@@ -326,10 +326,10 @@ class ReportGeneration{
         try{
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
-                const loc_html =  await generateReportForLocation(child._id,sectionImageProperties,reportType);
+                const loc_html =  await generateReportForLocation(child.id,sectionImageProperties,reportType);
                 return loc_html;
             }else if(child.type ===  ProjectChildType.SUBPROJECT){
-                const subProjectHtml = await generateReportForSubProject(child._id,sectionImageProperties,reportType);
+                const subProjectHtml = await generateReportForSubProject(child.id,sectionImageProperties,reportType);
                 return subProjectHtml;
             }
         }catch(error){

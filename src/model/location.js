@@ -3,9 +3,15 @@ var ObjectId = require('mongodb').ObjectId;
 const { QueryCollectionFormat } = require('@azure/core-http');
 const { JsonWebTokenError } = require('jsonwebtoken');
 var mongo = require('../database/mongo');
+const couchbase = require('../database/couchbase');
 const Projects = require('./project');
 const SubProjects = require('./subproject');
 const Sections = require('./sections');
+
+async function getLocationsCollection() {
+    await couchbase.connectToDatabase();
+    return couchbase.Locations;
+}
 
 var addLocation = async function (location) {
     var response = {};
@@ -85,35 +91,41 @@ var addLocation = async function (location) {
 var getLocationById = async function (id) {
     var response = {};
     try {
-        const result = await mongo.Locations.findOne({ _id: new ObjectId(id) });
+        const collection = await getLocationsCollection();
 
-        if (result) {
-            response = {
-                "data": {
-                    "item": result,
-                    "message": "Location found.",
-                    "code": 201
-                }
-            };
-            return response;
-        } else {
+        console.log("Fetching location with ID:", id);
+
+        const doc = await collection.get(id);
+        const content = doc.content || {};
+
+        response = {
+            "data": {
+                "item": content,
+                "message": "Location found.",
+                "code": 201
+            }
+        };
+        return response;
+    } catch (err) {
+        console.error("Error fetching location by ID:", err);
+
+        if (err.name === "DocumentNotFoundError") {
             response = {
                 "error": {
                     "code": 401,
                     "message": "No Location found."
                 }
-            }
+            };
             return response;
         }
-    }
-    catch (err) {
+
         response = {
             "error": {
                 "code": 500,
                 "message": "Error fetching location.",
                 "errordata": err
             }
-        }
+        };
         return response;
     }
 };

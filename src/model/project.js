@@ -3,8 +3,14 @@ var ObjectId = require('mongodb').ObjectId;
 const { QueryCollectionFormat } = require('@azure/core-http');
 const { JsonWebTokenError } = require('jsonwebtoken');
 var mongo = require('../database/mongo');
+const couchbase = require('../database/couchbase');
 const Location = require("./location");
 const SubProject = require("./subproject");
+
+async function getProjectsCollection() {
+    await couchbase.connectToDatabase();
+    return couchbase.Projects;
+}
 
 
 var addProject = async function (project) {
@@ -74,40 +80,53 @@ var getAllProjects = async function () {
       
 };
 
-var getProjectById = async function (id) { 
-    var response ={};   
-    try{
-        const result = await mongo.Projects.findOne({ _id:  new ObjectId(id) },{files:0});
-        
-        if (result) {
-            response = {
-                "data" :{
-                    "item": result,
-                    "message": "Project found.",
-                    "code":201
-                }   
-            };
-            return response;
-        } else {
+var getProjectById = async function (id) {
+    var response = {};
+    try {
+        const collection = await getProjectsCollection();
+
+        console.log("Fetching project with ID:", id, collection);
+
+        // Couchbase KV fetch
+        const doc = await collection.get(id);
+        const content = doc.content || {};
+
+        //console.log("Fetched project:", content);
+
+        // Couchbase-safe projection
+        delete content.files;
+
+        response = {
+            "data": {
+                "item": content,
+                "message": "Project found.",
+                "code": 201
+            }
+        };
+        return response;
+
+    } catch (err) {
+        console.error("Error fetching project by ID:", err);
+
+        if (err.name === "DocumentNotFoundError") {
             response = {
                 "error": {
                     "code": 401,
                     "message": "No Project found."
-                  }
-            }
+                }
+            };
             return response;
-        }    
-    }
-    catch(err){
+        }
+
         response = {
             "error": {
                 "code": 500,
                 "message": "Error fetching project.",
                 "errordata": err
-              }
-        }
+            }
+        };
         return response;
-    }    
+    }
 };
 
 

@@ -3,9 +3,15 @@ var ObjectId = require('mongodb').ObjectId;
 const { QueryCollectionFormat } = require('@azure/core-http');
 const { JsonWebTokenError } = require('jsonwebtoken');
 var mongo = require('../database/mongo');
+const couchbase = require('../database/couchbase');
 const user = require('./user');
 const Projects = require('./project');
 const Locations = require('./location');
+
+async function getSubProjectsCollection() {
+    await couchbase.connectToDatabase();
+    return couchbase.SubProjects;
+}
 
 var addSubProject = async function (subproject) {
     var response = {};
@@ -47,35 +53,41 @@ var addSubProject = async function (subproject) {
 var getSubProjectById = async function (id) {
     var response = {};
     try {
-        const result = await mongo.SubProjects.findOne({ _id: new ObjectId(id) });
+        const collection = await getSubProjectsCollection();
 
-        if (result) {
-            response = {
-                "data": {
-                    "item": result,
-                    "message": "SubProject found.",
-                    "code": 201
-                }
-            };
-            return response;
-        } else {
+        console.log("Fetching subproject with ID:", id);
+
+        const doc = await collection.get(id);
+        const content = doc.content || {};
+
+        response = {
+            "data": {
+                "item": content,
+                "message": "SubProject found.",
+                "code": 201
+            }
+        };
+        return response;
+    } catch (err) {
+        console.error("Error fetching subproject by ID:", err);
+
+        if (err.name === "DocumentNotFoundError") {
             response = {
                 "error": {
                     "code": 401,
                     "message": "No SubProject found."
                 }
-            }
+            };
             return response;
         }
-    }
-    catch (err) {
+
         response = {
             "error": {
                 "code": 500,
                 "message": "Error fetching subproject.",
                 "errordata": err
             }
-        }
+        };
         return response;
     }
 };
