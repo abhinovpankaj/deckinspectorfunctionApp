@@ -97,7 +97,7 @@
           const reportFileSize = reportFileStats.size;
           
           
-          const result = tenantService.editTenant(companyIdentifier, reportFileSize);
+          const result = await tenantService.editTenant(companyIdentifier, reportFileSize);
           if (result.reason){
             console.log(result);
           }

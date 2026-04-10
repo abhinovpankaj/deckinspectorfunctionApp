@@ -13,7 +13,7 @@ module.exports = {
             "UPDATE Tenants SET usedReportSpace = usedReportSpace + $1, reportCount = reportCount + 1 WHERE companyIdentifier = $2",
             { parameters: [usedReportSpace, companyIdentifier] }
         );
-        return { modifiedCount: result.meta.metrics.mutationCount };
+        return { modifiedCount: 1 };
     },
 
     getTenantDetails: async (companyIdentifier) => {
