@@ -1,5 +1,5 @@
 "use strict";
-const { DocumentNotFoundError } = require('couchbase');
+const { DocumentNotFoundError, MutateInSpec } = require('couchbase');
 var couchbase = require('../database/couchbase');
 const Role = require('./role');
 
@@ -81,7 +81,11 @@ var updateProjectReport = async function (projectReport, callback) {
             fileName: projectReport.fileName
         };
         
-        const result = await collection.upsert(projectReport._id,{ ...updateData });
+        await collection.mutateIn(projectReport._id, [
+            MutateInSpec.upsert('url', projectReport.url),
+            MutateInSpec.upsert('isReportInProgress', false),
+            MutateInSpec.upsert('fileName', projectReport.fileName)
+        ]);
         callback(null, { _id: projectReport._id, ...updateData });
     } catch (err) {
         const error = new Error("updateProjectReport(): " + err.message);
