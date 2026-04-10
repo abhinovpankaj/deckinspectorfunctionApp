@@ -81,7 +81,7 @@ var updateProjectReport = async function (projectReport, callback) {
             fileName: projectReport.fileName
         };
         
-        const result = await collection.replace(projectReport._id, updateData);
+        const result = await collection.upsert(projectReport._id,{ ...updateData });
         callback(null, { _id: projectReport._id, ...updateData });
     } catch (err) {
         const error = new Error("updateProjectReport(): " + err.message);
