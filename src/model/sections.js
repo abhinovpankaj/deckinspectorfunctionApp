@@ -3,8 +3,14 @@ var ObjectId = require('mongodb').ObjectId;
 const { QueryCollectionFormat } = require('@azure/core-http');
 const { JsonWebTokenError } = require('jsonwebtoken');
 var mongo = require('../database/mongo');
+const couchbase = require('../database/couchbase');
 const RatingMapping  = require("./ratingMapping.js");
 const Locations = require('./location.js');
+
+async function getSectionsCollection() {
+    await couchbase.connectToDatabase();
+    return couchbase.Sections;
+}
 
 var addSection = async function (section) {
     var response = {};
@@ -166,35 +172,43 @@ var getDynamicSectionById = async function (id) {
 var getSectionById = async function (id) {
     var response = {};
     try {
-        const result = await mongo.Sections.findOne({ _id: new ObjectId(id) }); 
-        if (result) {
-            transformData(result);
-            response = {
-                "data": {
-                    "item": result,
-                    "message": "Section found.",
-                    "code": 201
-                }
-            };
-            return response;
-        } else {
+        const collection = await getSectionsCollection();
+
+        console.log("Fetching section with ID:", id);
+
+        const doc = await collection.get(id);
+        const content = doc.content || {};
+
+        transformData(content);
+
+        response = {
+            "data": {
+                "item": content,
+                "message": "Section found.",
+                "code": 201
+            }
+        };
+        return response;
+    } catch (err) {
+        console.error("Error fetching section by ID:", err);
+
+        if (err.name === "DocumentNotFoundError") {
             response = {
                 "error": {
                     "code": 401,
                     "message": "No Section found."
                 }
-            }
+            };
             return response;
         }
-    }
-    catch (err) {
+
         response = {
             "error": {
                 "code": 500,
                 "message": "Error fetching Section.",
                 "errordata": err
             }
-        }
+        };
         return response;
     }
 };
