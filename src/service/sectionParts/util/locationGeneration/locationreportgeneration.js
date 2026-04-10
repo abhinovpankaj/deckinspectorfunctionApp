@@ -36,7 +36,7 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
         return 1; 
     } else{
       if (section1.sequenceNo==null) {
-        return section1._id-section2._id;
+        return section1.id-section2.id;
       }else{
         return (section1.sequenceNo-section2.sequenceNo);
       }         
@@ -75,13 +75,13 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
           await Promise.all(newSections.map(async (section, index) => {
             // check if doct is created
             
-            const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);
+            const filePath = path.join("sectionfiles",locationId.toString(),`${section.id}_${reportType}.docx`);
             if (isLocationFileExists(filePath)) {
               sectionDataDoc.push(filePath);
             }else{
-              const sectionData =  await sections.getSectionById(section._id);
-              const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section._id);
-              const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section._id);
+              const sectionData =  await sections.getSectionById(section.id);
+              const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section.id);
+              const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section.id);
               if(sectionData.data && sectionData.data.item)
               {
                 var sectionDocValues;
@@ -122,7 +122,7 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                         invasiverepairsinspectedandcompleted:false
                         };
                     }
-                    var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                    var filename = await getLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
                     sectionDataDoc[index]= filename;  
                     }
                   }else{
@@ -207,7 +207,7 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                         invasiverepairsinspectedandcompleted:false
                         };
                     }           
-                    var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                    var filename = await getLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
                     sectionDataDoc.push(filename);  
                   
                 }
@@ -221,15 +221,15 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
         }
       } else if (reportType === projectReportType.VISUALREPORT) {
           await Promise.all(newSections.map(async (section, index) => {    
-          const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);      
+          const filePath = path.join("sectionfiles",locationId.toString(),`${section.id}_${reportType}.docx`);      
           if (isLocationFileExists(filePath)) {
             sectionDataDoc.push(filePath);
           } else{
             var sectionData;
             if (formId==null) {
-               sectionData =  await sections.getSectionById(section._id);
+               sectionData =  await sections.getSectionById(section.id);
             }else{
-               sectionData =  await sections.getDynamicSectionById(section._id);
+               sectionData =  await sections.getDynamicSectionById(section.id);
             }
                      
             if(sectionData.data && sectionData.data.item)
@@ -287,7 +287,7 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                 }
               }   
             }
-            var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+            var filename = await getLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
             sectionDataDoc[index]=filename;
           }         
         }));
@@ -317,7 +317,7 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
         return 1; 
     } else{
       if (section1.sequenceNo==null) {
-        return section1._id-section2._id;
+        return section1.id-section2.id;
       }else{
         return (section1.sequenceNo-section2.sequenceNo);
       }         
@@ -348,13 +348,13 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
           await Promise.all(newSections.map(async (section, index) => {
             // check if doct is created
             
-            const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);
+            const filePath = path.join("sectionfiles",locationId.toString(),`${section.id}_${reportType}.docx`);
             // if (isLocationFileExists(filePath)) {
             //   sectionDataDoc.push(filePath);
             // }else{
-              const sectionData =  await sections.getSectionById(section._id);
-              const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section._id);
-              const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section._id);
+              const sectionData =  await sections.getSectionById(section.id);
+              const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section.id);
+              const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section.id);
               if(sectionData.data && sectionData.data.item)
               {
                 var sectionDocValues;
@@ -395,7 +395,7 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
                         invasiverepairsinspectedandcompleted:false
                         };
                     }
-                    var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                    var filename = await getLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
                     sectionDataDoc[index]= filename;  
                     }
                   }else{
@@ -480,7 +480,7 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
                         invasiverepairsinspectedandcompleted:false
                         };
                     }           
-                    var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                    var filename = await getLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
                     sectionDataDoc.push(filename);  
                   
                 }
@@ -494,15 +494,15 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
         }
       } else if (reportType === projectReportType.VISUALREPORT) {
           await Promise.all(newSections.map(async (section, index) => {    
-          const filePath = path.join("sectionfiles",locationId.toString(),`${section._id}_${reportType}.docx`);      
+          const filePath = path.join("sectionfiles",locationId.toString(),`${section.id}_${reportType}.docx`);      
           // if (isLocationFileExists(filePath)) {
           //   sectionDataDoc.push(filePath);
           // } else{
             var sectionData;
             if (formId==null) {
-               sectionData =  await sections.getSectionById(section._id);
+               sectionData =  await sections.getSectionById(section.id);
             }else{
-               sectionData =  await sections.getDynamicSectionById(section._id);
+               sectionData =  await sections.getDynamicSectionById(section.id);
             }
                      
             if(sectionData.data && sectionData.data.item)
@@ -560,7 +560,7 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
                 }
               }   
             }
-            var filename = await getLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+            var filename = await getLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
             sectionDataDoc[index]=filename;
          // }         
         }));
@@ -618,7 +618,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
           newSections.sort(function(section1,section2){
             
             if (section1.sequenceNo===null||section1.sequenceNo===undefined) {
-                return section1._id-section2._id;
+                return section1.id-section2.id;
             }else{
                 return (section1.sequenceNo-section2.sequenceNo);
             }
@@ -626,9 +626,9 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
         });
           
           await Promise.all(newSections.map(async (section, index) => {
-            const sectionData =  await sections.getSectionById(section._id);
-            const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section._id);
-            const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section._id);
+            const sectionData =  await sections.getSectionById(section.id);
+            const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(section.id);
+            const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(section.id);
             if(sectionData.data && sectionData.data.item)
             {
               var sectionDocValues;
@@ -669,7 +669,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
                       invasiverepairsinspectedandcompleted:false
                       };
                   }
-                  var filename = await saveLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                  var filename = await saveLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
                   sectionDataDoc[index]= filename;  
                   }
                 }else{
@@ -754,7 +754,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
                       invasiverepairsinspectedandcompleted:false
                       };
                   }           
-                  var filename = await saveLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues,reportType) ;
+                  var filename = await saveLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues,reportType) ;
                   sectionDataDoc.push(filename);  
                 
               }
@@ -779,7 +779,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
             
             if (section1.sequenceNo==null) {
 
-                return section1._id-section2._id;
+                return section1.id-section2.id;
             }else{
                 return (section1.sequenceNo-section2.sequenceNo);
             }
@@ -787,10 +787,10 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
         });
        
           await Promise.all(newSections.map(async (section, index) => {
-          var sectionData =  await sections.getSectionById(section._id);
+          var sectionData =  await sections.getSectionById(section.id);
           if (sectionData.error&&sectionData.error.code===401) {
             console.log('trying dynamic form fetch');
-            sectionData =  await sections.getDynamicSectionById(section._id);
+            sectionData =  await sections.getDynamicSectionById(section.id);
             isDynamicForm = true;
           }
           if(sectionData.data && sectionData.data.item)
@@ -861,7 +861,7 @@ const saveDocReportForLocation = async function (locationId, reportType,subproje
         template = fs.readFileSync(path.join(__dirname,'DeckAllData_Generic.docx'));
       }
     }
-            var filename = await saveLocationDoc(locationId,sectionData.data.item._id,template,sectionDocValues, reportType) ;
+            var filename = await saveLocationDoc(locationId,sectionData.data.item.id,template,sectionDocValues, reportType) ;
             sectionDataDoc[index]=filename;
         }
         }));
@@ -1131,7 +1131,7 @@ const getSectionshtmls = async function (location, sections, sectionImagePropert
     const newSections = sections.filter(section =>  isSectionIncluded(reportType, section));
 
     await Promise.all(newSections.map(async (section, index) => {
-      const processExecutor = SectionPartProcessExecutorFactory.getProcessExecutorChain(location, section.name, section._id, sectionImageProperties, reportType);
+      const processExecutor = SectionPartProcessExecutorFactory.getProcessExecutorChain(location, section.name, section.id, sectionImageProperties, reportType);
       const sectionHtml = await processExecutor.executeProcess();
       sectionHtmls[index] = sectionHtml;
     }));
