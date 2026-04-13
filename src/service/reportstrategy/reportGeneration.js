@@ -15,6 +15,23 @@ const sharp = require('sharp');
 var promiseLimit = require('promise-limit')
 var tenantService = require('../tenantService.js');
 
+function getEntityId(entity) {
+    return entity?.id ?? entity?._id;
+}
+
+function compareByEntityId(entity1, entity2) {
+    const entityId1 = getEntityId(entity1);
+    const entityId2 = getEntityId(entity2);
+    const entityId1Number = Number(entityId1);
+    const entityId2Number = Number(entityId2);
+
+    if (Number.isFinite(entityId1Number) && Number.isFinite(entityId2Number)) {
+        return entityId1Number - entityId2Number;
+    }
+
+    return String(entityId1 ?? '').localeCompare(String(entityId2 ?? ''));
+}
+
 class ReportGeneration{
     async generateReportDoc(project,companyName,sectionImageProperties,reportType){
         try{
@@ -188,7 +205,7 @@ class ReportGeneration{
             let orderedProjects =[];
             if (project.data.item.projecttype === 'singlelevel') {
                 orderedProjects = project.data.item.sections;
-                var sectionsFile= await this.getReportDocSingleLevelProj(orderedProjects,project.data.item._id,project.data.item.isInvasive,companyName,sectionImageProperties,reportType,project.data.item.formId);
+                var sectionsFile= await this.getReportDocSingleLevelProj(orderedProjects,project.data.item.id,project.data.item.isInvasive,companyName,sectionImageProperties,reportType,project.data.item.formId);
                 projectHtml.push(...sectionsFile);
             }else{
                 orderedProjects = this.reOrderProjects(project.data.item.children);
@@ -266,7 +283,7 @@ class ReportGeneration{
                 return 1; // subProj2 comes before subProj1
             } else {
                 if (subProj1.sequenceNo === null || subProj1.sequenceNo === undefined) {
-                    return subProj1._id - subProj2._id;
+                    return compareByEntityId(subProj1, subProj2);
                 } else {
                     return subProj1.sequenceNo - subProj2.sequenceNo;
                 }
@@ -280,7 +297,7 @@ class ReportGeneration{
                 return 1; // loc2 comes before loc1
             } else {
                 if (loc1.sequenceNo === null || loc1.sequenceNo === undefined) {
-                    return loc1._id - loc2._id;
+                    return compareByEntityId(loc1, loc2);
                 } else {
                     return loc1.sequenceNo - loc2.sequenceNo;
                 }
@@ -304,17 +321,18 @@ class ReportGeneration{
     async getReportDoc(child,companyName,sectionImageProperties,reportType,formId){
         var stringformId= formId==null?null:formId.toString();
         try{
+            const childId = getEntityId(child);
             //for single level projects no type is defined.
             if (child.type==undefined) {
-                const section_html =  await generateDocReportForSection(child.id,companyName,sectionImageProperties,reportType,true,stringformId);
+                const section_html =  await generateDocReportForSection(childId,companyName,sectionImageProperties,reportType,true,stringformId);
                 return section_html;
             }
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
-                const loc_html =  await generateDocReportForLocation(child.id,companyName,sectionImageProperties,reportType,stringformId);
+                const loc_html =  await generateDocReportForLocation(childId,companyName,sectionImageProperties,reportType,stringformId);
                 return loc_html;
             }else if(child.type ===  ProjectChildType.SUBPROJECT){
-                const subProjectHtml = await generateDocReportForSubProject(child.id,companyName,sectionImageProperties,reportType,stringformId);
+                const subProjectHtml = await generateDocReportForSubProject(childId,companyName,sectionImageProperties,reportType,stringformId);
                 return subProjectHtml;
             }
         }catch(error){
@@ -324,12 +342,13 @@ class ReportGeneration{
     
     async getReport(child,sectionImageProperties,reportType){
         try{
+            const childId = getEntityId(child);
             if(child.type === ProjectChildType.PROJECTLOCATION)
             {
-                const loc_html =  await generateReportForLocation(child.id,sectionImageProperties,reportType);
+                const loc_html =  await generateReportForLocation(childId,sectionImageProperties,reportType);
                 return loc_html;
             }else if(child.type ===  ProjectChildType.SUBPROJECT){
-                const subProjectHtml = await generateReportForSubProject(child.id,sectionImageProperties,reportType);
+                const subProjectHtml = await generateReportForSubProject(childId,sectionImageProperties,reportType);
                 return subProjectHtml;
             }
         }catch(error){

@@ -11,9 +11,8 @@ var isProjectReportinProgress = async function(project_id, reportType) {
     try {
         const cluster = couchbase.cluster;
         
-        // Query using N1QL with full path
         const result = await cluster.query(
-            `SELECT * FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
+            `SELECT RAW isReportInProgress FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
              WHERE project_id = $1 AND reportType = $2`,
             { parameters: [project_id, reportType] }
         );
@@ -33,9 +32,8 @@ var addProjectReport = async function (projectReport, callback) {
         const cluster = couchbase.cluster;
         const collection = couchbase.ProjectReports;
         
-        // Query to find existing report
         const findResult = await cluster.query(
-            `SELECT META().id as docId, * FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
+            `SELECT META().id as docId FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
              WHERE project_id = $1 AND reportType = $2`,
             { parameters: [projectReport.project_id, projectReport.reportType] }
         );
@@ -51,7 +49,7 @@ var addProjectReport = async function (projectReport, callback) {
             callback(null, { ...reportData, _id: docId });
         } else {
             // Insert new report
-            const docId = `${projectReport.project_id}_${projectReport.reportType}_${Date.now()}`;
+            const docId = `${projectReport.project_id}_${projectReport.reportType}`;
             const reportData = {
                 project_id: projectReport.project_id,
                 url: projectReport.url,
@@ -80,12 +78,22 @@ var updateProjectReport = async function (projectReport, callback) {
             isReportInProgress: false,
             fileName: projectReport.fileName
         };
+
+        if (projectReport.reportType !== undefined) {
+            updateData.reportType = projectReport.reportType;
+        }
         
-        await collection.mutateIn(projectReport._id, [
+        const mutateOperations = [
             MutateInSpec.upsert('url', projectReport.url),
             MutateInSpec.upsert('isReportInProgress', false),
             MutateInSpec.upsert('fileName', projectReport.fileName)
-        ]);
+        ];
+
+        if (projectReport.reportType !== undefined) {
+            mutateOperations.push(MutateInSpec.upsert('reportType', projectReport.reportType));
+        }
+
+        await collection.mutateIn(projectReport._id, mutateOperations);
         callback(null, { _id: projectReport._id, ...updateData });
     } catch (err) {
         const error = new Error("updateProjectReport(): " + err.message);
@@ -99,7 +107,7 @@ var getProjectReportsbyProjectId = async function (project_id, callback) {
         const cluster = couchbase.cluster;
         
         const result = await cluster.query(
-            `SELECT * FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
+            `SELECT META().id as _id, ProjectReports.* FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ProjectReports 
              WHERE project_id = $1`,
             { parameters: [project_id] }
         );

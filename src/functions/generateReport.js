@@ -135,6 +135,7 @@ app.http('generateReport', {
                 projectReports.updateProjectReport({
                     _id:projectReportId,
                     project_id,                   
+                    reportType,
                     url,
                     isReportInProgress:false                   
                     },function(err,result){

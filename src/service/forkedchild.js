@@ -78,6 +78,7 @@
         projectReports.updateProjectReport({
             _id:projectReportId,
             project_id:projectId,
+            reportType,
             fileName,                   
             url,
             isReportInProgress:false                   

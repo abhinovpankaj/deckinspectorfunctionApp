@@ -3,6 +3,23 @@ const {generateReportForLocation, generateDocReportForLocation} = require("./sec
 const LocationType = require("../model/locationType.js");
 var promiseLimit = require('promise-limit')
 
+function getEntityId(entity) {
+    return entity?.id ?? entity?._id;
+}
+
+function compareByEntityId(entity1, entity2) {
+    const entityId1 = getEntityId(entity1);
+    const entityId2 = getEntityId(entity2);
+    const entityId1Number = Number(entityId1);
+    const entityId2Number = Number(entityId2);
+
+    if (Number.isFinite(entityId1Number) && Number.isFinite(entityId2Number)) {
+        return entityId1Number - entityId2Number;
+    }
+
+    return String(entityId1 ?? '').localeCompare(String(entityId2 ?? ''));
+}
+
 const generateDocReportForSubProject = async function generateDocReportForSubProject(subProjectId,companyName,
     sectionImageProperties,
     reportType,formId)
@@ -16,7 +33,7 @@ const generateDocReportForSubProject = async function generateDocReportForSubPro
 
     await Promise.all(orderdLocationsInSubProject.map((key) => {
 
-        return limit(() => generateDocReportForLocation(key._id,companyName,sectionImageProperties,reportType,formId,subprojectName));
+                return limit(() => generateDocReportForLocation(getEntityId(key),companyName,sectionImageProperties,reportType,formId,subprojectName));
       })).then(loc_html => {
         
         console.log('path:', loc_html)
@@ -50,7 +67,7 @@ const generateReportForSubProject = async function generateReportForSubProject(s
     {
         const orderdLocationsInSubProject = reordersubProjectLocations(subProjectData.data.item.children);
         for (let key in orderdLocationsInSubProject) {
-            const promise = generateReportForLocation(orderdLocationsInSubProject[key]._id,sectionImageProperties,reportType)
+            const promise = generateReportForLocation(getEntityId(orderdLocationsInSubProject[key]),sectionImageProperties,reportType)
                 .then((loc_html) => {
                 locsHtmls[key] = loc_html;
                 });
@@ -82,7 +99,7 @@ const reordersubProjectLocations = function(locations){
     }
     subProjectApartments.sort(function(apt1,apt2){
             if (apt1.sequenceNo==null) {
-                return apt1._id- apt2._id;
+                return compareByEntityId(apt1, apt2);
             }
             else{
                 return (apt1.sequenceNo-apt2.sequenceNo);
@@ -91,7 +108,7 @@ const reordersubProjectLocations = function(locations){
         });
     subProjectLocations.sort(function(loc1,loc2){
         if (loc1.sequenceNo==null) {
-            return loc1._id- loc2._id;
+            return compareByEntityId(loc1, loc2);
         }
         else{
             return (loc1.sequenceNo-loc2.sequenceNo);

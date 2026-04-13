@@ -14,10 +14,10 @@ router.route('/add')
 .post( function(req, res)  {  
 try {
     // Get document input
-    const { project_id, name, url, uploader } = req.body;
+  const { project_id, name, url, uploader, reportType } = req.body;
     var timestamp = (new Date(Date.now())).toISOString();
     // Validate document input
-    if (!(project_id && name && url)) {
+  if (!(project_id && name && url && reportType)) {
       res.status(400).send("All input is required");
     }
  
@@ -26,6 +26,7 @@ try {
         project_id,
         name,
         url,
+    reportType,
         uploader,
         timestamp
     },function(err,result){

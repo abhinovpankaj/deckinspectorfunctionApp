@@ -7,6 +7,10 @@ const ProjectReportType = require("../../model/projectReportType.js");
 const filePath = path.join(__dirname, 'projectfile.ejs');
 const template = fs.readFileSync(filePath, 'utf8');
 const SectionPartProcessExecutorFactoryForSingleLevelProject = require("../sectionParts/sectionPartProcessExecutorFactoryForSingleLevelProject.js");
+
+function getEntityId(entity) {
+    return entity?.id ?? entity?._id;
+}
 //TODO UMESH Refactoring required
 class SingleProjectReportGeneration{
     async generateReportHtml(project,sectionImageProperties,reportType){
@@ -19,7 +23,8 @@ class SingleProjectReportGeneration{
             const sections = project.data.item.sections;
             const newSections = sections.filter(section => this.isSectionIncluded(reportType, sections));
             for (let key in newSections) {
-                const executor = SectionPartProcessExecutorFactoryForSingleLevelProject.getProcessExecutorChain(sections[key]._id,sectionImageProperties,reportType);
+                const sectionId = getEntityId(newSections[key]);
+                const executor = SectionPartProcessExecutorFactoryForSingleLevelProject.getProcessExecutorChain(sectionId,sectionImageProperties,reportType);
                 const promise = executor.executeProcess()   
                 .then((secHtml) => {
                     secHtmls[key] = secHtml;

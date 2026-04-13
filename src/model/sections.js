@@ -133,11 +133,26 @@ var capitalizeWords = function (word) {
     return word;
 }
 
+var normalizeSectionIdentifiers = function (section, fallbackId) {
+    if (!section) {
+        return section;
+    }
+
+    const resolvedId = section.id || section._id || fallbackId;
+    if (resolvedId !== undefined && resolvedId !== null) {
+        section.id = resolvedId.toString();
+        section._id = resolvedId.toString();
+    }
+
+    return section;
+}
+
 var getDynamicSectionById = async function (id) {
     var response = {};
     try {
         const result = await mongo.DynamicSections.findOne({ _id: new ObjectId(id) }); 
         if (result) {
+            normalizeSectionIdentifiers(result, id);
             //transformData(result);
             response = {
                 "data": {
@@ -178,6 +193,7 @@ var getSectionById = async function (id) {
 
         const doc = await collection.get(id);
         const content = doc.content || {};
+    normalizeSectionIdentifiers(content, id);
 
         transformData(content);
 
