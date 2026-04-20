@@ -205,7 +205,7 @@ class ReportGeneration{
             let orderedProjects =[];
             if (project.data.item.projecttype === 'singlelevel') {
                 orderedProjects = project.data.item.sections;
-                var sectionsFile= await this.getReportDocSingleLevelProj(orderedProjects,project.data.item.id,project.data.item.isInvasive,companyName,sectionImageProperties,reportType,project.data.item.formId);
+                var sectionsFile= await this.getReportDocSingleLevelProj(orderedProjects,project.data.item.id??project.data.item._id,project.data.item.isInvasive,companyName,sectionImageProperties,reportType,project.data.item.formId);
                 projectHtml.push(...sectionsFile);
             }else{
                 orderedProjects = this.reOrderProjects(project.data.item.children);

@@ -96,6 +96,8 @@ var getProjectById = async function (id) {
         // Couchbase-safe projection
         delete content.files;
 
+        content.id = id;
+
         response = {
             "data": {
                 "item": content,
