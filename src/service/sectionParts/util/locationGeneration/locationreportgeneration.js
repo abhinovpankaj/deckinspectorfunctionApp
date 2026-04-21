@@ -303,9 +303,9 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                   };
                 }
               }   
+              var filename = await getLocationDoc(locationId,getSectionId(sectionData.data.item),template,sectionDocValues,reportType) ;
+              sectionDataDoc[index]=filename;
             }
-            var filename = await getLocationDoc(locationId,getSectionId(sectionData.data.item),template,sectionDocValues,reportType) ;
-            sectionDataDoc[index]=filename;
           }         
         }));
         return sectionDataDoc;
@@ -576,9 +576,9 @@ const generateDocReportForSection = async function (mysections,locationId,isProj
                   };
                 }
               }   
+              var filename = await getLocationDoc(locationId,getSectionId(sectionData.data.item),template,sectionDocValues,reportType) ;
+              sectionDataDoc[index]=filename;
             }
-            var filename = await getLocationDoc(locationId,getSectionId(sectionData.data.item),template,sectionDocValues,reportType) ;
-            sectionDataDoc[index]=filename;
          // }         
         }));
         return sectionDataDoc;

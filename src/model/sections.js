@@ -206,9 +206,8 @@ var getSectionById = async function (id) {
         };
         return response;
     } catch (err) {
-        console.error("Error fetching section by ID:", err);
-
         if (err.name === "DocumentNotFoundError") {
+            console.warn(`Section not found for ID: ${id}`);
             response = {
                 "error": {
                     "code": 401,
@@ -218,6 +217,7 @@ var getSectionById = async function (id) {
             return response;
         }
 
+        console.error("Error fetching section by ID:", err);
         response = {
             "error": {
                 "code": 500,
