@@ -239,9 +239,9 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
       } else if (reportType === projectReportType.VISUALREPORT) {
           await Promise.all(newSections.map(async (section, index) => {    
           const filePath = path.join("sectionfiles",locationId.toString(),`${getSectionId(section)}_${reportType}.docx`);      
-          if (isLocationFileExists(filePath)) {
-            sectionDataDoc.push(filePath);
-          } else{
+          //if (isLocationFileExists(filePath)) {
+            //sectionDataDoc.push(filePath);
+          //} else{
             var sectionData;
             if (formId==null) {
                sectionData =  await sections.getSectionById(getSectionId(section));
@@ -306,7 +306,7 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
               var filename = await getLocationDoc(locationId,getSectionId(sectionData.data.item),template,sectionDocValues,reportType) ;
               sectionDataDoc[index]=filename;
             }
-          }         
+          //}         
         }));
         return sectionDataDoc;
       }
