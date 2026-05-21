@@ -93,9 +93,9 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
             // check if doct is created
             
             const filePath = path.join("sectionfiles",locationId.toString(),`${getSectionId(section)}_${reportType}.docx`);
-            if (isLocationFileExists(filePath)) {
-              sectionDataDoc.push(filePath);
-            }else{
+            // if (isLocationFileExists(filePath)) {
+            //   sectionDataDoc.push(filePath);
+            // }else{
               const sectionData =  await sections.getSectionById(getSectionId(section));
               const invasiveSectionData = await invasiveSections.getInvasiveSectionByParentId(getSectionId(section));
               const conclusiveSectionData = await conclusiveSections.getConclusiveSectionByParentId(getSectionId(section));
@@ -230,7 +230,7 @@ const generateDocReportForLocation = async function (locationId,companyName, sec
                 }
                 
               }
-            }             
+            // }             
           }));
           return sectionDataDoc;
         }else{
