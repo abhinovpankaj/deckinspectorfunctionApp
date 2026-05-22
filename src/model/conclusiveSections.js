@@ -3,13 +3,27 @@ var ObjectId = require('mongodb').ObjectId;
 const { QueryCollectionFormat } = require('@azure/core-http');
 const { JsonWebTokenError } = require('jsonwebtoken');
 var mongo = require('../database/mongo');
+const couchbase = require('../database/couchbase');
 const RatingMapping  = require("./ratingMapping.js");
+
+// Get bucket name and scope name for N1QL queries
+const DB_BUCKET_NAME = couchbase.DB_BUCKET_NAME;
+const DB_SCOPE_NAME = couchbase.DB_SCOPE_NAME;
+
+async function getConclusiveSectionsCollection() {
+    await couchbase.connectToDatabase();
+    return couchbase.ConclusiveSections;
+}
 
 
 var getConclusiveSectionById = async function(id){
     var response = {};
     try {
-        const result = await mongo.ConclusiveSections.findOne({ _id: new ObjectId(id) });
+        const collection = await getConclusiveSectionsCollection();
+        const docId = id.toString();
+        const doc = await collection.get(docId);
+        const result = doc.content || {};
+        result._id = docId;
         if (result) {
             transformData(result);
             response = {
@@ -31,6 +45,15 @@ var getConclusiveSectionById = async function(id){
         }
     }
     catch (err) {
+        if (err.name === "DocumentNotFoundError") {
+            response = {
+                "error": {
+                    "code": 401,
+                    "message": "No Conclusive Section found."
+                }
+            }
+            return response;
+        }
         console.log(err);
         response = {
             "error": {
@@ -54,7 +77,18 @@ var transformData = function(conclusiveSection) {
 var getConclusiveSectionByParentId = async function(id){
     var response = {};
     try {
-        const result = await mongo.ConclusiveSections.findOne({ parentid: new ObjectId(id) });
+        await couchbase.connectToDatabase();
+        const cluster = couchbase.cluster;
+        const parentId = id.toString();
+
+        const query = `SELECT META().id AS _id, ConclusiveSection.*
+                       FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.ConclusiveSection
+                       WHERE parentid = $1 OR TO_STRING(parentid) = $1 OR parentid.\`$oid\` = $1
+                       LIMIT 1`;
+        const queryResult = await cluster.query(query, {
+            parameters: [parentId]
+        });
+        const result = queryResult.rows && queryResult.rows.length > 0 ? queryResult.rows[0] : null;
         
         if (result) {
             transformData(result);
@@ -92,8 +126,13 @@ var getConclusiveSectionByParentId = async function(id){
 var addConclusiveSection = async function(conclusiveSection){
     var response = {};
     try {
-        var result = await mongo.ConclusiveSections.insertOne(conclusiveSection);
-        var insertedId = result.insertedId;
+        const collection = await getConclusiveSectionsCollection();
+        var insertedId = (conclusiveSection._id || new ObjectId()).toString();
+        const conclusiveSectionToInsert = {
+            ...conclusiveSection,
+            _id: insertedId
+        };
+        await collection.insert(insertedId, conclusiveSectionToInsert);
         if(insertedId){
             response = {
                 "data": {
@@ -121,10 +160,26 @@ var editConclusiveSection = async function(conclusiveSectionId,newConclusiveData
 {
     var response ={};
     try{
-        const updateObject = { $set: newConclusiveData };
-        var result = await mongo.ConclusiveSections.updateOne({ _id: new ObjectId(conclusiveSectionId) },updateObject,{upsert:false});    
+        const collection = await getConclusiveSectionsCollection();
+        const docId = conclusiveSectionId.toString();
+        const existingDoc = await collection.get(docId);
+        const updatedDoc = {
+            ...(existingDoc.content || {}),
+            ...newConclusiveData,
+            _id: docId
+        };
+        await collection.replace(docId, updatedDoc);
         
-        if(result.modifiedCount<1){
+        response = {
+            "data" :{
+                "message": "Conclusive Section updated successfully.",
+                "code":201
+            }
+        };
+        return response;
+    }
+    catch(err){
+        if (err.name === "DocumentNotFoundError") {
             response = {
                 "error": {
                     "code": 401,
@@ -132,28 +187,7 @@ var editConclusiveSection = async function(conclusiveSectionId,newConclusiveData
                   }
             }
             return response;
-        } else{
-            if(result.modifiedCount==1){
-                response = {
-                    "data" :{                   
-                        "message": "Conclusive Section updated successfully.",
-                        "code":201
-                    }   
-                };
-                return response;
-            }           
-            else{
-                response = {
-                    "data" :{                    
-                        "message": "Failed to update the Conclusive details.",
-                        "code":409
-                    }   
-                };
-                return response;
-            }                   
-        }   
-    }
-    catch(err){
+        }
         console.log(err);
         response = {
             "error": {

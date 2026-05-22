@@ -3,12 +3,26 @@ var ObjectId = require('mongodb').ObjectId;
 const { QueryCollectionFormat } = require('@azure/core-http');
 const { JsonWebTokenError } = require('jsonwebtoken');
 var mongo = require('../database/mongo');
+const couchbase = require('../database/couchbase');
+
+// Get bucket name and scope name for N1QL queries
+const DB_BUCKET_NAME = couchbase.DB_BUCKET_NAME;
+const DB_SCOPE_NAME = couchbase.DB_SCOPE_NAME;
+
+async function getInvasiveSectionsCollection() {
+    await couchbase.connectToDatabase();
+    return couchbase.InvasiveSections;
+}
 
 
 var getInvasiveSectionById = async function(id){
     var response = {};
     try {
-        const result = await mongo.InvasiveSections.findOne({ _id: new ObjectId(id) });
+        const collection = await getInvasiveSectionsCollection();
+        const docId = id.toString();
+        const doc = await collection.get(docId);
+        const result = doc.content || {};
+        result._id = docId;
 
         if (result) {
             response = {
@@ -30,6 +44,15 @@ var getInvasiveSectionById = async function(id){
         }
     }
     catch (err) {
+        if (err.name === "DocumentNotFoundError") {
+            response = {
+                "error": {
+                    "code": 401,
+                    "message": "No Invasive Section found."
+                }
+            }
+            return response;
+        }
         response = {
             "error": {
                 "code": 500,
@@ -44,8 +67,13 @@ var getInvasiveSectionById = async function(id){
 var addInvasiveSection = async function(invasiveSection){
     var response = {};
     try {
-        var result = await mongo.InvasiveSections.insertOne(invasiveSection);
-        var insertedId = result.insertedId;
+        const collection = await getInvasiveSectionsCollection();
+        var insertedId = (invasiveSection._id || new ObjectId()).toString();
+        const invasiveSectionToInsert = {
+            ...invasiveSection,
+            _id: insertedId
+        };
+        await collection.insert(insertedId, invasiveSectionToInsert);
         if(insertedId){
             response = {
                 "data": {
@@ -72,7 +100,18 @@ var addInvasiveSection = async function(invasiveSection){
 var getInvasiveSectionByParentId = async function(id){
     var response = {};
     try {
-        const result = await mongo.InvasiveSections.findOne({ parentid: new ObjectId(id) });
+        await couchbase.connectToDatabase();
+        const cluster = couchbase.cluster;
+        const parentId = id.toString();
+
+        const query = `SELECT META().id AS _id, InvasiveSection.*
+                       FROM \`${DB_BUCKET_NAME}\`.\`${DB_SCOPE_NAME}\`.InvasiveSection
+                       WHERE parentid = $1 OR TO_STRING(parentid) = $1 OR parentid.\`$oid\` = $1
+                       LIMIT 1`;
+        const queryResult = await cluster.query(query, {
+            parameters: [parentId]
+        });
+        const result = queryResult.rows && queryResult.rows.length > 0 ? queryResult.rows[0] : null;
 
         if (result) {
             response = {
@@ -109,10 +148,26 @@ var editInvasiveSection = async function(invasiveSectionId,newInvasiveData)
 {
     var response ={};
     try{
-        const updateObject = { $set: newInvasiveData };
-        var result = await mongo.InvasiveSections.updateOne({ _id: new ObjectId(invasiveSectionId) },updateObject,{upsert:false});    
+        const collection = await getInvasiveSectionsCollection();
+        const docId = invasiveSectionId.toString();
+        const existingDoc = await collection.get(docId);
+        const updatedDoc = {
+            ...(existingDoc.content || {}),
+            ...newInvasiveData,
+            _id: docId
+        };
+        await collection.replace(docId, updatedDoc);
         
-        if(result.modifiedCount<1){
+        response = {
+            "data" :{
+                "message": "Invasive Section updated successfully.",
+                "code":201
+            }
+        };
+        return response;
+    }
+    catch(err){
+        if (err.name === "DocumentNotFoundError") {
             response = {
                 "error": {
                     "code": 401,
@@ -120,28 +175,7 @@ var editInvasiveSection = async function(invasiveSectionId,newInvasiveData)
                   }
             }
             return response;
-        } else{
-            if(result.modifiedCount==1){
-                response = {
-                    "data" :{                   
-                        "message": "Invasive Section updated successfully.",
-                        "code":201
-                    }   
-                };
-                return response;
-            }           
-            else{
-                response = {
-                    "data" :{                    
-                        "message": "Failed to update the Invasive details.",
-                        "code":409
-                    }   
-                };
-                return response;
-            }                   
-        }   
-    }
-    catch(err){
+        }
         console.log(err);
         response = {
             "error": {
